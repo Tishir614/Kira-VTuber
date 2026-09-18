@@ -8,6 +8,9 @@ class Settings(BaseSettings):
     llm_model: str = "qwen3:4b"
     temperature: float = 0.8
     supabase_url: str = ""
-    supabase_publishable_key: str = ""\n    piper_model: str = ""\n    stt_model: str = "small"\n    stt_language: str = "ru"
+    supabase_publishable_key: str = ""
+    piper_model: str = ""
+    stt_model: str = "small"
+    stt_language: str = "ru"
 
 settings = Settings()
