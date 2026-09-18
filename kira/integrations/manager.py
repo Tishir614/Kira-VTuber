@@ -22,7 +22,8 @@ class IntegrationManager:
             except Exception as e: self.state.last_error=f"{name}: {e}"
             finally: setattr(self.state,name,False)
         self.tasks[name]=asyncio.create_task(runner())
-    def start_youtube(self,api_key,live_chat_id): self._start("youtube",YouTubeAdapter(api_key,live_chat_id))
+    def start_youtube(self,api_key,live_chat_id): self._start("youtube",YouTubeAdapter(live_chat_id,api_key=api_key))
+    def start_youtube_oauth(self,access_token,live_chat_id): self._start("youtube",YouTubeAdapter(live_chat_id,access_token=access_token))
     def start_twitch(self,client_id,access_token,broadcaster_user_id,bot_user_id): self._start("twitch",TwitchAdapter(client_id,access_token,broadcaster_user_id,bot_user_id))
     async def stop(self,name):
         a=self.adapters.get(name)
