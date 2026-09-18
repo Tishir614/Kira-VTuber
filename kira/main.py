@@ -33,6 +33,7 @@ from .autopilot import autopilot
 from .telegram_channel import telegram_status, telegram_post
 from .obs_websocket import obs_ws
 from .showrunner import showrunner
+from .director import director
 import asyncio
 
 app = FastAPI(title="Kira VTuber Core", version="0.2.0")
@@ -103,6 +104,11 @@ class StudioSettings(BaseModel):
     obs_ws_password: str | None = None
     obs_live_scene: str | None = None
     autonomous_talk_interval_minutes: float | None = None
+    director_silence_minutes: float | None = None
+    obs_scene_follow: str | None = None
+    obs_scene_subscribe: str | None = None
+    obs_scene_raid: str | None = None
+    obs_event_scene_seconds: float | None = None
 
 @app.get("/")
 async def home(): return FileResponse(WEB / "index.html")
@@ -178,6 +184,9 @@ async def show_start():
 async def show_stop():
     try: return await showrunner.stop()
     except Exception as exc: raise HTTPException(503,str(exc)) from exc
+
+@app.get("/director")
+async def director_status(): return director.snapshot()
 
 @app.get("/show")
 async def show_status(): return showrunner.snapshot()
