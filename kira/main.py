@@ -14,6 +14,7 @@ from .handsfree import handsfree
 from .settings_store import settings_store
 from .personality import personality
 from .diagnostics import diagnostics
+from .setup import setup_status, pull_ollama_model
 import asyncio
 
 app = FastAPI(title="Kira VTuber Core", version="0.2.0")
@@ -33,6 +34,9 @@ class MemoryRequest(BaseModel):
 class HandsFreeRequest(BaseModel):
     wake_word: str = "кира"
 
+class ModelPullRequest(BaseModel):
+    model: str
+
 class StudioSettings(BaseModel):
     wake_word: str | None = None
     voice_enabled: bool | None = None
@@ -41,6 +45,19 @@ class StudioSettings(BaseModel):
 
 @app.get("/")
 async def home(): return FileResponse(WEB / "index.html")
+
+@app.get("/setup")
+async def setup_page(): return FileResponse(WEB / "setup.html")
+
+@app.get("/setup/status")
+async def setup_check(): return await setup_status()
+
+@app.post("/setup/pull-model")
+async def setup_pull(req: ModelPullRequest):
+    allowed={"qwen3:4b","qwen3:8b","qwen3:14b"}
+    if req.model not in allowed: raise HTTPException(400,"unsupported setup model")
+    try: return await pull_ollama_model(req.model)
+    except RuntimeError as exc: raise HTTPException(503,str(exc)) from exc
 
 @app.get("/studio")
 async def studio(): return FileResponse(WEB / "studio.html")
