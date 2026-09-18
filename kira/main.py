@@ -11,6 +11,8 @@ from .stt import stt
 from .avatar_controller import avatar_controller
 from .persistent_memory import persistent_memory
 from .handsfree import handsfree
+from .settings_store import settings_store
+from .personality import personality
 import asyncio
 
 app = FastAPI(title="Kira VTuber Core", version="0.2.0")
@@ -30,8 +32,30 @@ class MemoryRequest(BaseModel):
 class HandsFreeRequest(BaseModel):
     wake_word: str = "кира"
 
+class StudioSettings(BaseModel):
+    wake_word: str | None = None
+    voice_enabled: bool | None = None
+    volume: float | None = None
+    personality: dict | None = None
+
 @app.get("/")
 async def home(): return FileResponse(WEB / "index.html")
+
+@app.get("/studio")
+async def studio(): return FileResponse(WEB / "studio.html")
+
+@app.get("/settings")
+async def get_settings(): return settings_store.load()
+
+@app.patch("/settings")
+async def patch_settings(req: StudioSettings):
+    patch={k:v for k,v in req.model_dump().items() if v is not None}
+    if "volume" in patch: patch["volume"]=max(0.0,min(1.0,patch["volume"]))
+    if "personality" in patch:
+        p=patch["personality"]
+        for key in ("warmth","humor","energy","verbosity"):
+            if key in p: setattr(personality,key,max(0.0,min(1.0,float(p[key]))))
+    return settings_store.save(patch)
 
 @app.get("/health")
 async def health():
