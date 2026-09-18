@@ -32,3 +32,15 @@ def test_game_learning_and_stagnation_detection():
     assert "stagnant>=3" in game
     assert "recall(game_id)" in game
     assert "runtime/game_memory.json" in memory
+
+
+def test_game_reflex_is_bounded_and_llm_free():
+    reflex=Path("kira/game_reflex.py").read_text()
+    assert "from .llm" not in reflex
+    assert 'hold_ms":90' in reflex
+    assert "confidence<.35" in reflex
+
+def test_game_brain_combines_reflex_and_strategy():
+    game=Path("kira/game_brain.py").read_text()
+    assert "reflex_choose" in game
+    assert "await decide(goal,v,mem,recent)" in game
