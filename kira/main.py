@@ -25,6 +25,7 @@ from .audience import audience
 from .integrations.manager import integrations
 from .integrations.twitch_oauth import twitch_oauth
 from .stream_brain import stream_brain
+from .viewer_memory import viewer_memory
 import asyncio
 
 app = FastAPI(title="Kira VTuber Core", version="0.2.0")
@@ -57,6 +58,11 @@ class TwitchConnect(BaseModel):
 class YouTubeConnect(BaseModel):
     api_key: str
     live_chat_id: str
+
+class ViewerFact(BaseModel):
+    platform: str
+    user: str
+    fact: str
 
 class StreamBrainPatch(BaseModel):
     mode: str | None = None
@@ -140,6 +146,18 @@ async def youtube_start(req: YouTubeConnect):
 async def youtube_stop():
     await integrations.stop("youtube")
     return {"ok":True}
+
+@app.get("/viewers")
+async def viewers(): return {"viewers":viewer_memory.list()}
+
+@app.get("/viewers/{platform}/{user}")
+async def viewer(platform: str,user: str): return viewer_memory.get(platform,user) or {}
+
+@app.post("/viewers/fact")
+async def viewer_fact(req: ViewerFact): return viewer_memory.remember(req.platform[:24],req.user[:64],req.fact[:500]) or {}
+
+@app.delete("/viewers/{platform}/{user}")
+async def viewer_forget(platform: str,user: str): return {"ok":viewer_memory.forget(platform,user)}
 
 @app.get("/stream/brain")
 async def stream_brain_state(): return stream_brain.snapshot()
