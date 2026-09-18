@@ -53,3 +53,11 @@ def test_per_game_profile_tracks_progression():
     for word in ("deaths","quests","inventory","places"): assert word in profile
     assert "death_detected" in vision
     assert "profile_death" in game and "update_world" in game
+
+
+def test_master_autonomy_is_explicit_on_off():
+    core=Path("kira/autonomy.py").read_text()
+    studio=Path("web/studio.html").read_text()
+    assert "master_autonomy_enabled" in core
+    assert "/autonomy/start" in studio and "/autonomy/stop" in studio
+    assert "autopilot.start()" in core and "watchdog.start()" in core
