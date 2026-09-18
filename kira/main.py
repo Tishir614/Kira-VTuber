@@ -40,6 +40,7 @@ from .watchdog import watchdog
 from .live2d_model import status as live2d_model_status, install_zip as install_live2d_zip, MODEL_DIR
 from .mobile_bundle import export_bundle
 from .self_heal import repair as self_repair
+from .cloud_client import cloud_status, cloud_post
 import asyncio
 
 app = FastAPI(title="Kira VTuber Core", version="0.2.0")
@@ -113,6 +114,15 @@ class StreamMessage(BaseModel):
 
 class ModelPullRequest(BaseModel):
     model: str
+
+class CloudUrlRequest(BaseModel):
+    url: str
+
+class CloudSearchRequest(BaseModel):
+    query: str
+
+class CloudGameRequest(BaseModel):
+    game: str
 
 class StudioSettings(BaseModel):
     wake_word: str | None = None
@@ -470,6 +480,24 @@ async def test_stt():
 async def test_voice():
     try: return await voice_test()
     except Exception as exc: raise HTTPException(503,str(exc)) from exc
+
+@app.get("/cloud/status")
+async def kira_cloud_status(): return await cloud_status()
+
+@app.post("/cloud/browser/open")
+async def kira_cloud_open(req:CloudUrlRequest):
+    try:return await cloud_post("/browser/open",{"url":req.url})
+    except Exception as exc:raise HTTPException(503,str(exc)) from exc
+
+@app.post("/cloud/browser/search")
+async def kira_cloud_search(req:CloudSearchRequest):
+    try:return await cloud_post("/browser/search",{"query":req.query})
+    except Exception as exc:raise HTTPException(503,str(exc)) from exc
+
+@app.post("/cloud/games/launch")
+async def kira_cloud_game(req:CloudGameRequest):
+    try:return await cloud_post("/games/launch",{"game":req.game})
+    except Exception as exc:raise HTTPException(503,str(exc)) from exc
 
 @app.get("/diagnostics")
 async def get_diagnostics(): return await diagnostics()
