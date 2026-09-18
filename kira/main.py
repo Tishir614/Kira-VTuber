@@ -47,6 +47,8 @@ from .vision import status as vision_status, describe_game
 from .game_reflex import snapshot as reflex_status
 from .game_profile import get as get_game_profile
 from .autonomy import autonomy
+from .activity_brain import snapshot as activity_snapshot
+from .mood import snapshot as mood_snapshot
 import asyncio
 
 app = FastAPI(title="Kira VTuber Core", version="0.2.0")
@@ -333,6 +335,12 @@ async def director_status(): return director.snapshot()
 
 @app.get("/show")
 async def show_status(): return showrunner.snapshot()
+
+@app.get("/activity")
+async def activity_state(): return activity_snapshot()
+
+@app.get("/mood")
+async def mood_state(): return mood_snapshot()
 
 @app.get("/autonomy")
 async def autonomy_state(): return autonomy.snapshot()
