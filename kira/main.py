@@ -34,6 +34,7 @@ from .telegram_channel import telegram_status, telegram_post
 from .obs_websocket import obs_ws
 from .showrunner import showrunner
 from .director import director
+from .schedule import schedule
 import asyncio
 
 app = FastAPI(title="Kira VTuber Core", version="0.2.0")
@@ -42,6 +43,9 @@ WEB = Path(__file__).resolve().parent.parent / "web"
 @app.on_event("startup")
 async def startup_event():
     asyncio.create_task(avatar_controller.idle_loop())
+    local=settings_store.load()
+    if local.get("schedule_enabled",False): schedule.start()
+    if local.get("autopilot_enabled",False): autopilot.start()
 
 class TelegramPostRequest(BaseModel):
     text: str
@@ -109,6 +113,9 @@ class StudioSettings(BaseModel):
     obs_scene_subscribe: str | None = None
     obs_scene_raid: str | None = None
     obs_event_scene_seconds: float | None = None
+    schedule_days: str | None = None
+    schedule_start: str | None = None
+    schedule_duration_minutes: int | None = None
 
 @app.get("/")
 async def home(): return FileResponse(WEB / "index.html")
@@ -185,6 +192,15 @@ async def show_stop():
     try: return await showrunner.stop()
     except Exception as exc: raise HTTPException(503,str(exc)) from exc
 
+@app.get("/schedule")
+async def schedule_status(): return schedule.snapshot()
+
+@app.post("/schedule/start")
+async def schedule_start(): settings_store.save({"schedule_enabled":True}); schedule.start(); return {"ok":True,**schedule.snapshot()}
+
+@app.post("/schedule/stop")
+async def schedule_stop(): settings_store.save({"schedule_enabled":False}); schedule.stop(); return {"ok":True,**schedule.snapshot()}
+
 @app.get("/director")
 async def director_status(): return director.snapshot()
 
@@ -195,10 +211,10 @@ async def show_status(): return showrunner.snapshot()
 async def autopilot_state(): return autopilot.snapshot()
 
 @app.post("/autopilot/start")
-async def autopilot_start(): autopilot.start(); stream_chat.start(); return {"ok":True,**autopilot.snapshot()}
+async def autopilot_start(): settings_store.save({"autopilot_enabled":True}); autopilot.start(); stream_chat.start(); return {"ok":True,**autopilot.snapshot()}
 
 @app.post("/autopilot/stop")
-async def autopilot_stop(): autopilot.stop(); return {"ok":True,**autopilot.snapshot()}
+async def autopilot_stop(): settings_store.save({"autopilot_enabled":False}); autopilot.stop(); return {"ok":True,**autopilot.snapshot()}
 
 @app.get("/integrations/telegram/status")
 async def tg_status(): return await telegram_status()
