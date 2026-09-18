@@ -44,3 +44,12 @@ def test_game_brain_combines_reflex_and_strategy():
     game=Path("kira/game_brain.py").read_text()
     assert "reflex_choose" in game
     assert "await decide(goal,v,mem,recent)" in game
+
+
+def test_per_game_profile_tracks_progression():
+    profile=Path("kira/game_profile.py").read_text()
+    vision=Path("kira/vision.py").read_text()
+    game=Path("kira/game_brain.py").read_text()
+    for word in ("deaths","quests","inventory","places"): assert word in profile
+    assert "death_detected" in vision
+    assert "profile_death" in game and "update_world" in game
