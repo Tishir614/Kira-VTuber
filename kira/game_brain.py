@@ -8,6 +8,7 @@ from .vision import analyze_game
 from .game_memory import recall, remember
 from .game_reflex import choose as reflex_choose, record as reflex_record
 from .game_profile import get as game_profile, session as profile_session, step as profile_step, death as profile_death, update_world
+from .learning_memory import recall as recall_learned
 
 ACTIONS={"move","look","click","wait","done"}
 KEYS={"w","a","s","d","space","shift","ctrl","e","f","r","q","escape","enter","up","down","left","right"}
@@ -43,7 +44,7 @@ def signature(v:dict)->str:
     return json.dumps({k:v.get(k) for k in ("scene","ui_state","player_state","progress")},ensure_ascii=False,sort_keys=True)[:1200]
 
 async def run(goal:str,steps:int=20,game_id:str="default"):
-    trace=[];recent=[];previous="";stagnant=0;profile_session(game_id);mem={"memory":recall(game_id),"profile":game_profile(game_id)}
+    trace=[];recent=[];previous="";stagnant=0;profile_session(game_id);mem={"memory":recall(game_id),"profile":game_profile(game_id),"learned_guides":recall_learned(game_id,goal)}
     for _ in range(max(1,min(steps,60))):
         try:v=await analyze_game(goal,previous)
         except Exception as exc:v={"scene":f"Vision unavailable: {exc}","confidence":0}
@@ -54,7 +55,7 @@ async def run(goal:str,steps:int=20,game_id:str="default"):
         sig=signature(v);stagnant=stagnant+1 if sig==previous else 0
         if stagnant>=3:
             remember(game_id,"failure",f"No visible progress after actions: {recent[-3:]}")
-            recent=[];stagnant=0;mem={"memory":recall(game_id),"profile":game_profile(game_id)}
+            recent=[];stagnant=0;mem={"memory":recall(game_id),"profile":game_profile(game_id),"learned_guides":recall_learned(game_id,goal)}
         reflex=reflex_choose(v)
         if reflex.get("action")!="wait":
             await execute(reflex);reflex_record(reflex);recent.append(reflex)
