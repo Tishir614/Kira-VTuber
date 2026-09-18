@@ -1,6 +1,6 @@
 from pathlib import Path
 from fastapi import FastAPI, HTTPException, UploadFile, File
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel
 import httpx, uvicorn
 from .config import settings
@@ -38,6 +38,7 @@ from .director import director
 from .schedule import schedule
 from .watchdog import watchdog
 from .live2d_model import status as live2d_model_status, install_zip as install_live2d_zip, MODEL_DIR
+from .mobile_bundle import export_bundle
 import asyncio
 
 app = FastAPI(title="Kira VTuber Core", version="0.2.0")
@@ -407,6 +408,14 @@ async def setup_pull(req: ModelPullRequest):
     try: return await pull_ollama_model(req.model)
     except RuntimeError as exc: raise HTTPException(503,str(exc)) from exc
 
+@app.get("/mobile/bundle")
+async def mobile_bundle():
+    # Portable project data for Android. Secrets are deliberately excluded.
+    data=export_bundle(False)
+    return StreamingResponse(data,media_type="application/zip",headers={"Content-Disposition":"attachment; filename=Kira-Mobile-Data.zip"})
+@app.get("/mobile/summary")
+async def mobile_summary():
+    return {"health":await health(),"show":showrunner.snapshot(),"autopilot":autopilot.snapshot(),"watchdog":watchdog.snapshot(),"integrations":integrations.snapshot(),"avatar":live2d.snapshot(),"live2d":live2d_model_status(),"memory":persistent_memory.load()}
 @app.get("/manifest.webmanifest")
 async def pwa_manifest(): return FileResponse(WEB / "manifest.webmanifest",media_type="application/manifest+json")
 @app.get("/sw.js")
