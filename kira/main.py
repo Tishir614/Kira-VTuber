@@ -84,6 +84,8 @@ class ModelPullRequest(BaseModel):
 class StudioSettings(BaseModel):
     wake_word: str | None = None
     audio_output: str | None = None
+    piper_model: str | None = None
+    voice_speed: float | None = None
     voice_enabled: bool | None = None
     volume: float | None = None
     personality: dict | None = None
@@ -231,6 +233,7 @@ async def get_settings(): return settings_store.load()
 async def patch_settings(req: StudioSettings):
     patch={k:v for k,v in req.model_dump().items() if v is not None}
     if "volume" in patch: patch["volume"]=max(0.0,min(1.0,patch["volume"]))
+    if "voice_speed" in patch: patch["voice_speed"]=max(0.5,min(2.0,patch["voice_speed"]))
     if "personality" in patch:
         p=patch["personality"]
         for key in ("warmth","humor","energy","verbosity"):
