@@ -3,6 +3,7 @@ from dataclasses import dataclass, asdict
 from pathlib import Path
 from time import time
 import httpx
+from .proxy import client as proxy_client
 from .pipeline import respond
 from .settings_store import settings_store
 
@@ -29,7 +30,7 @@ class KiraAutopilot:
     async def _telegram_post(self,text):
         s=settings_store.load(); token=s.get("telegram_bot_token",""); chat=s.get("telegram_channel","")
         if not token or not chat: return False
-        async with httpx.AsyncClient(timeout=20) as c:
+        async with proxy_client("telegram",timeout=20) as c:
             r=await c.post(f"https://api.telegram.org/bot{token}/sendMessage",json={"chat_id":chat,"text":text}); r.raise_for_status()
         return True
     async def _loop(self):
