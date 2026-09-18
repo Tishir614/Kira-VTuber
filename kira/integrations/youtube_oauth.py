@@ -42,6 +42,22 @@ class YouTubeOAuth:
         items=d.get("items",[])
         if not items:return None
         b=items[0];return {"broadcast_id":b.get("id"),"title":b.get("snippet",{}).get("title"),"live_chat_id":b.get("snippet",{}).get("liveChatId")}
+    async def create_broadcast(self,token,title,start_iso,privacy="unlisted",description=""):
+        body={"snippet":{"title":title[:100],"description":description[:5000],"scheduledStartTime":start_iso},"status":{"privacyStatus":privacy,"selfDeclaredMadeForKids":False},"contentDetails":{"enableAutoStart":False,"enableAutoStop":False,"enableDvr":True,"recordFromStart":True,"monitorStream":{"enableMonitorStream":False}}}
+        async with httpx.AsyncClient(timeout=20) as c:
+            r=await c.post("https://www.googleapis.com/youtube/v3/liveBroadcasts",params={"part":"snippet,status,contentDetails"},headers={"Authorization":f"Bearer {token}"},json=body);r.raise_for_status();return r.json()
+    async def streams(self,token):
+        async with httpx.AsyncClient(timeout=20) as c:
+            r=await c.get("https://www.googleapis.com/youtube/v3/liveStreams",params={"part":"id,snippet,cdn,status","mine":"true","maxResults":50},headers={"Authorization":f"Bearer {token}"});r.raise_for_status();return r.json().get("items",[])
+    async def bind(self,token,broadcast_id,stream_id):
+        async with httpx.AsyncClient(timeout=20) as c:
+            r=await c.post("https://www.googleapis.com/youtube/v3/liveBroadcasts/bind",params={"id":broadcast_id,"streamId":stream_id,"part":"id,snippet,contentDetails,status"},headers={"Authorization":f"Bearer {token}"});r.raise_for_status();return r.json()
+    async def transition(self,token,broadcast_id,status):
+        async with httpx.AsyncClient(timeout=30) as c:
+            r=await c.post("https://www.googleapis.com/youtube/v3/liveBroadcasts/transition",params={"broadcastStatus":status,"id":broadcast_id,"part":"id,snippet,status"},headers={"Authorization":f"Bearer {token}"});r.raise_for_status();return r.json()
+    async def stream_status(self,token,stream_id):
+        async with httpx.AsyncClient(timeout=15) as c:
+            r=await c.get("https://www.googleapis.com/youtube/v3/liveStreams",params={"part":"status","id":stream_id},headers={"Authorization":f"Bearer {token}"});r.raise_for_status();items=r.json().get("items",[]);return items[0].get("status",{}).get("streamStatus") if items else None
     def disconnect(self):
         if TOKEN_PATH.exists():TOKEN_PATH.unlink()
 youtube_oauth=YouTubeOAuth()
