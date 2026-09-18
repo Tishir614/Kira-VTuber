@@ -51,6 +51,7 @@ from .activity_brain import snapshot as activity_snapshot
 from .mood import snapshot as mood_snapshot
 from .media_learner import study_url
 from .learning_memory import recall as learned_recall
+from .research_brain import research
 import asyncio
 
 app = FastAPI(title="Kira VTuber Core", version="0.2.0")
@@ -138,6 +139,11 @@ class CloudGameRequest(BaseModel):
 class CloudGoalRequest(BaseModel):
     goal: str
     max_steps: int = 12
+
+class ResearchRequest(BaseModel):
+    game: str
+    mission: str = ""
+    limit: int = 3
 
 class StudyRequest(BaseModel):
     game: str
@@ -343,6 +349,11 @@ async def director_status(): return director.snapshot()
 
 @app.get("/show")
 async def show_status(): return showrunner.snapshot()
+
+@app.post("/learning/research")
+async def learning_research(req:ResearchRequest):
+    try:return await research(req.game,req.mission,max(1,min(req.limit,5)))
+    except Exception as exc:raise HTTPException(503,str(exc)) from exc
 
 @app.post("/learning/study")
 async def learning_study(req:StudyRequest):
