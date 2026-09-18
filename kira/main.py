@@ -43,6 +43,7 @@ from .self_heal import repair as self_repair
 from .cloud_client import cloud_status, cloud_post
 from .cloud_brain import run_goal as cloud_run_goal
 from .game_brain import run as game_run
+from .vision import status as vision_status, describe_game
 import asyncio
 
 app = FastAPI(title="Kira VTuber Core", version="0.2.0")
@@ -521,6 +522,14 @@ async def kira_game_goal(req:GameGoalRequest):
     goal=req.goal.strip()
     if not goal:raise HTTPException(400,"goal is empty")
     try:return await game_run(goal,req.steps)
+    except Exception as exc:raise HTTPException(503,str(exc)) from exc
+
+@app.get("/vision/status")
+async def kira_vision_status(): return await vision_status()
+
+@app.post("/vision/describe")
+async def kira_vision_describe():
+    try:return {"description":await describe_game()}
     except Exception as exc:raise HTTPException(503,str(exc)) from exc
 
 @app.get("/diagnostics")
