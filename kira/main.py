@@ -77,6 +77,17 @@ class TwitchConnect(BaseModel):
     broadcaster_user_id: str
     bot_user_id: str
 
+class YouTubeBroadcastCreate(BaseModel):
+    title: str
+    scheduled_start: str
+    privacy: str = "unlisted"
+    description: str = ""
+    stream_id: str
+
+class YouTubeTransition(BaseModel):
+    broadcast_id: str
+    status: str
+
 class YouTubeConnect(BaseModel):
     api_key: str
     live_chat_id: str
@@ -224,6 +235,32 @@ async def youtube_autostart():
     active=await youtube_oauth.active_broadcast(token)
     if not active or not active.get("live_chat_id"):raise HTTPException(404,"No active YouTube live broadcast")
     integrations.start_youtube_oauth(token,active["live_chat_id"]);stream_chat.start();return {"ok":True,**active}
+
+@app.get("/youtube/streams")
+async def youtube_streams():
+    s=settings_store.load();cid=s.get("youtube_client_id","");secret=s.get("youtube_client_secret","");token=await youtube_oauth.access_token(cid,secret) if cid and secret else None
+    if not token: raise HTTPException(401,"YouTube is not connected")
+    return {"streams":await youtube_oauth.streams(token)}
+
+@app.post("/youtube/broadcast")
+async def youtube_create_broadcast(req:YouTubeBroadcastCreate):
+    if req.privacy not in {"private","unlisted","public"}: raise HTTPException(400,"invalid privacy")
+    s=settings_store.load();cid=s.get("youtube_client_id","");secret=s.get("youtube_client_secret","");token=await youtube_oauth.access_token(cid,secret) if cid and secret else None
+    if not token: raise HTTPException(401,"YouTube is not connected")
+    b=await youtube_oauth.create_broadcast(token,req.title,req.scheduled_start,req.privacy,req.description)
+    await youtube_oauth.bind(token,b["id"],req.stream_id)
+    settings_store.save({"youtube_broadcast_id":b["id"],"youtube_stream_id":req.stream_id})
+    return {"ok":True,"broadcast_id":b["id"],"stream_id":req.stream_id}
+
+@app.post("/youtube/transition")
+async def youtube_transition(req:YouTubeTransition):
+    if req.status not in {"testing","live","complete"}: raise HTTPException(400,"invalid transition")
+    s=settings_store.load();cid=s.get("youtube_client_id","");secret=s.get("youtube_client_secret","");token=await youtube_oauth.access_token(cid,secret) if cid and secret else None
+    if not token: raise HTTPException(401,"YouTube is not connected")
+    if req.status in {"testing","live"}:
+        stream_id=s.get("youtube_stream_id","")
+        if not stream_id or await youtube_oauth.stream_status(token,stream_id)!="active": raise HTTPException(409,"YouTube ingest stream is not active yet")
+    return await youtube_oauth.transition(token,req.broadcast_id,req.status)
 
 @app.delete("/auth/youtube")
 async def youtube_disconnect():
