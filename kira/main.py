@@ -10,6 +10,7 @@ from .microphone import record
 from .stt import stt
 from .avatar_controller import avatar_controller
 from .persistent_memory import persistent_memory
+from .handsfree import handsfree
 import asyncio
 
 app = FastAPI(title="Kira VTuber Core", version="0.2.0")
@@ -25,6 +26,9 @@ class ChatRequest(BaseModel):
 
 class MemoryRequest(BaseModel):
     fact: str
+
+class HandsFreeRequest(BaseModel):
+    wake_word: str = "кира"
 
 @app.get("/")
 async def home(): return FileResponse(WEB / "index.html")
@@ -60,6 +64,19 @@ async def add_memory(req: MemoryRequest):
 async def clear_memory():
     persistent_memory.forget_all()
     return {"ok": True}
+
+@app.get("/handsfree")
+async def handsfree_state(): return handsfree.snapshot()
+
+@app.post("/handsfree/start")
+async def handsfree_start(req: HandsFreeRequest):
+    handsfree.start(req.wake_word)
+    return {"ok": True, **handsfree.snapshot()}
+
+@app.post("/handsfree/stop")
+async def handsfree_stop():
+    handsfree.stop()
+    return {"ok": True, **handsfree.snapshot()}
 
 @app.post("/listen")
 async def listen(seconds: int = 6):
