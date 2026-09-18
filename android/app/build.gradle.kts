@@ -1,6 +1,6 @@
 plugins { id("com.android.application") }
 android { namespace="ai.kira.studio"; compileSdk=35
- defaultConfig { applicationId="ai.kira.studio"; minSdk=26; targetSdk=35; versionCode=3; versionName="1.2.0" }
+ defaultConfig { applicationId="ai.kira.studio"; minSdk=26; targetSdk=35; versionCode=4; versionName="1.3.0" }
  buildFeatures { buildConfig=true }
 }
 dependencies {
