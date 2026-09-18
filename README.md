@@ -13,3 +13,7 @@ Install Ollama and Python 3.11+, clone this repository, run `bash scripts/instal
 Runtime rendering needs an exported Cubism package containing `.model3.json`, `.moc3`, textures and related files. A `.cmo3` source project must be exported from Cubism Editor first.
 
 Next phases: faster-whisper STT, Piper TTS, persistent memory, Live2D renderer bridge, lip sync and streaming integrations.
+
+
+## Current features
+Local Ollama chat, persistent memory, personality controls, faster-whisper adapter, Piper adapter, hands-free wake word mode, Kira Studio, hardware/setup diagnostics, audio self-tests, local model discovery, avatar state bridge and an OBS browser overlay are now included.
