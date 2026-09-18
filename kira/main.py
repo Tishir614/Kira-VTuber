@@ -24,6 +24,7 @@ from .stream_chat import stream_chat
 from .audience import audience
 from .integrations.manager import integrations
 from .integrations.twitch_oauth import twitch_oauth
+from .stream_brain import stream_brain
 import asyncio
 
 app = FastAPI(title="Kira VTuber Core", version="0.2.0")
@@ -56,6 +57,12 @@ class TwitchConnect(BaseModel):
 class YouTubeConnect(BaseModel):
     api_key: str
     live_chat_id: str
+
+class StreamBrainPatch(BaseModel):
+    mode: str | None = None
+    global_cooldown: float | None = None
+    per_viewer_cooldown: float | None = None
+    mention_required: bool | None = None
 
 class StreamMessage(BaseModel):
     platform: str = "local"
@@ -133,6 +140,17 @@ async def youtube_start(req: YouTubeConnect):
 async def youtube_stop():
     await integrations.stop("youtube")
     return {"ok":True}
+
+@app.get("/stream/brain")
+async def stream_brain_state(): return stream_brain.snapshot()
+
+@app.patch("/stream/brain")
+async def stream_brain_patch(req: StreamBrainPatch):
+    p={k:v for k,v in req.model_dump().items() if v is not None}
+    if "mode" in p and p["mode"] not in {"quiet","active","chaos"}: raise HTTPException(400,"invalid mode")
+    if "global_cooldown" in p: p["global_cooldown"]=max(1.0,min(120.0,p["global_cooldown"]))
+    if "per_viewer_cooldown" in p: p["per_viewer_cooldown"]=max(1.0,min(600.0,p["per_viewer_cooldown"]))
+    stream_brain.configure(**p); return stream_brain.snapshot()
 
 @app.post("/stream/start")
 async def stream_start(): stream_chat.start(); return {"ok":True,"enabled":True}
