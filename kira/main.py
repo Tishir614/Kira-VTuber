@@ -19,6 +19,9 @@ from .devices import audio_devices, default_audio
 from .selftest import microphone_test, stt_test, voice_test
 from .model_manager import ollama_models
 from .stream_state import snapshot as stream_snapshot
+from .chat_events import chat_queue
+from .stream_chat import stream_chat
+from .audience import audience
 import asyncio
 
 app = FastAPI(title="Kira VTuber Core", version="0.2.0")
@@ -38,6 +41,11 @@ class MemoryRequest(BaseModel):
 class HandsFreeRequest(BaseModel):
     wake_word: str = "кира"
 
+class StreamMessage(BaseModel):
+    platform: str = "local"
+    user: str
+    text: str
+
 class ModelPullRequest(BaseModel):
     model: str
 
@@ -49,6 +57,20 @@ class StudioSettings(BaseModel):
 
 @app.get("/")
 async def home(): return FileResponse(WEB / "index.html")
+
+@app.post("/stream/start")
+async def stream_start(): stream_chat.start(); return {"ok":True,"enabled":True}
+
+@app.post("/stream/stop")
+async def stream_stop(): stream_chat.stop(); return {"ok":True,"enabled":False}
+
+@app.post("/stream/message")
+async def stream_message(req: StreamMessage):
+    ok=chat_queue.push(req.platform[:24],req.user[:64],req.text[:1000])
+    return {"ok":ok}
+
+@app.get("/stream/audience")
+async def stream_audience(): return {"viewers":audience.snapshot()}
 
 @app.get("/overlay")
 async def overlay(): return FileResponse(WEB / "overlay.html")
