@@ -8,9 +8,15 @@ from .pipeline import respond
 from .live2d import live2d
 from .microphone import record
 from .stt import stt
+from .avatar_controller import avatar_controller
+import asyncio
 
 app = FastAPI(title="Kira VTuber Core", version="0.2.0")
 WEB = Path(__file__).resolve().parent.parent / "web"
+
+@app.on_event("startup")
+async def startup_event():
+    asyncio.create_task(avatar_controller.idle_loop())
 
 class ChatRequest(BaseModel):
     message: str
