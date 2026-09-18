@@ -12,7 +12,7 @@ import androidx.activity.OnBackPressedCallback
 import androidx.work.*
 import java.util.concurrent.TimeUnit
 
-class MainActivity:Activity(){
+class MainActivity:androidx.activity.ComponentActivity(){
  private lateinit var web:WebView
  private var chooser:ValueCallback<Array<Uri>>?=null
  private val pick=registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.GetContent()){u->chooser?.onReceiveValue(if(u==null)null else arrayOf(u));chooser=null}
