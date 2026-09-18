@@ -15,6 +15,8 @@ from .settings_store import settings_store
 from .personality import personality
 from .diagnostics import diagnostics
 from .setup import setup_status, pull_ollama_model
+from .devices import audio_devices, default_audio
+from .selftest import microphone_test, stt_test, voice_test
 import asyncio
 
 app = FastAPI(title="Kira VTuber Core", version="0.2.0")
@@ -74,6 +76,24 @@ async def patch_settings(req: StudioSettings):
         for key in ("warmth","humor","energy","verbosity"):
             if key in p: setattr(personality,key,max(0.0,min(1.0,float(p[key]))))
     return settings_store.save(patch)
+
+@app.get("/devices/audio")
+async def devices_audio(): return {"devices":audio_devices(),"default":default_audio()}
+
+@app.post("/selftest/microphone")
+async def test_microphone():
+    try: return await microphone_test()
+    except Exception as exc: raise HTTPException(503,str(exc)) from exc
+
+@app.post("/selftest/stt")
+async def test_stt():
+    try: return await stt_test()
+    except Exception as exc: raise HTTPException(503,str(exc)) from exc
+
+@app.post("/selftest/voice")
+async def test_voice():
+    try: return await voice_test()
+    except Exception as exc: raise HTTPException(503,str(exc)) from exc
 
 @app.get("/diagnostics")
 async def get_diagnostics(): return await diagnostics()
