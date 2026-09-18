@@ -6,6 +6,7 @@ import asyncio, base64, json
 import httpx
 from .cloud_client import _url
 from .llm import chat
+from .vision import describe_game
 
 ACTIONS={"move","look","click","wait","done"}
 KEYS={"w","a","s","d","space","shift","ctrl","e","f","r","q","escape","enter","up","down","left","right"}
@@ -15,8 +16,6 @@ async def frame():
         r=await c.get(_url()+"/screen");r.raise_for_status();return r.json()
 
 async def decide(goal:str, note:str=""):
-    # Current local LLM is text-only. Keep the loop ready for a vision model while
-    # still allowing explicit textual game-state notes from adapters later.
     prompt=f"""You are Kira playing a single-player game in your isolated desktop.
 Goal: {goal}
 Game-state note: {note or 'No vision description is available yet.'}
@@ -41,7 +40,9 @@ async def execute(a):
 async def run(goal:str,steps:int=20):
     trace=[]
     for _ in range(max(1,min(steps,60))):
-        a=await decide(goal);trace.append(a)
+        try: note=await describe_game(goal)
+        except Exception as exc: note=f"Vision unavailable: {exc}"
+        a=await decide(goal,note);trace.append({"vision":note[:1200],"action":a})
         if a.get("action")=="done":return {"ok":True,"done":True,"trace":trace}
         await execute(a)
     return {"ok":True,"done":False,"trace":trace,"reason":"step limit reached"}
