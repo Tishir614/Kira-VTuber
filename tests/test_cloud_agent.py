@@ -68,3 +68,13 @@ def test_autonomous_activity_stays_bounded():
     assert "subprocess" not in activity
     assert 'cloud_post("/games/launch"' in activity
     assert "autonomous_games" in activity
+
+
+def test_learning_memory_is_source_tagged_and_used_by_game_brain():
+    learn=Path("kira/learning_memory.py").read_text()
+    game=Path("kira/game_brain.py").read_text()
+    media=Path("kira/media_learner.py").read_text()
+    assert "source_url" in learn and "confidence" in learn
+    assert "learned_guides" in game
+    assert "study_url" in media
+    assert "download" not in media.lower()
