@@ -35,6 +35,7 @@ from .obs_websocket import obs_ws
 from .showrunner import showrunner
 from .director import director
 from .schedule import schedule
+from .watchdog import watchdog
 import asyncio
 
 app = FastAPI(title="Kira VTuber Core", version="0.2.0")
@@ -46,6 +47,7 @@ async def startup_event():
     local=settings_store.load()
     if local.get("schedule_enabled",False): schedule.start()
     if local.get("autopilot_enabled",False): autopilot.start()
+    if local.get("watchdog_enabled",True): watchdog.start()
 
 class TelegramPostRequest(BaseModel):
     text: str
@@ -116,6 +118,10 @@ class StudioSettings(BaseModel):
     schedule_days: str | None = None
     schedule_start: str | None = None
     schedule_duration_minutes: int | None = None
+    watchdog_interval_seconds: float | None = None
+    watchdog_failure_limit: int | None = None
+    watchdog_safe_stop: bool | None = None
+    watchdog_reconnect_twitch: bool | None = None
 
 @app.get("/")
 async def home(): return FileResponse(WEB / "index.html")
@@ -191,6 +197,15 @@ async def show_start():
 async def show_stop():
     try: return await showrunner.stop()
     except Exception as exc: raise HTTPException(503,str(exc)) from exc
+
+@app.get("/watchdog")
+async def watchdog_status(): return watchdog.snapshot()
+
+@app.post("/watchdog/start")
+async def watchdog_start(): settings_store.save({"watchdog_enabled":True}); watchdog.start(); return {"ok":True,**watchdog.snapshot()}
+
+@app.post("/watchdog/stop")
+async def watchdog_stop(): settings_store.save({"watchdog_enabled":False}); watchdog.stop(); return {"ok":True,**watchdog.snapshot()}
 
 @app.get("/schedule")
 async def schedule_status(): return schedule.snapshot()
