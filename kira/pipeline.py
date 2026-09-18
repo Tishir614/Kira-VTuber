@@ -5,7 +5,8 @@ from .live2d import live2d
 from .llm import chat
 from .memory import memory
 from .voice import voice
-from .audio import play_wav
+from .audio_output import play_wav_to_output
+from .settings_store import settings_store
 from .stream_state import state as stream_state
 from .subtitles import subtitles
 from .lipsync import drive_from_wav
@@ -28,7 +29,7 @@ async def respond(text: str, speak: bool = True) -> dict:
             # Temporary amplitude animation until real PCM/RMS lip-sync lands.
             task = asyncio.create_task(drive_from_wav(wav))
             try:
-                await play_wav(wav)
+                await play_wav_to_output(wav, settings_store.load().get("audio_output", ""))
                 spoken = True
             finally:
                 task.cancel()
