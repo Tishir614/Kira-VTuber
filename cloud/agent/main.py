@@ -16,6 +16,17 @@ _page=None
 class UrlRequest(BaseModel): url: HttpUrl
 class SearchRequest(BaseModel): query: str
 class GameRequest(BaseModel): game: str
+class ClickRequest(BaseModel):
+    x: float
+    y: float
+    button: str = "left"
+class TypeRequest(BaseModel):
+    text: str
+class KeyRequest(BaseModel):
+    key: str
+class ScrollRequest(BaseModel):
+    dx: float = 0
+    dy: float = 500
 
 async def page():
     global _browser,_page
@@ -62,3 +73,42 @@ async def launch(req:GameRequest):
 
 @app.get("/games")
 async def games(): return {"games":sorted(ALLOWLIST)}
+
+
+@app.get("/screen")
+async def screen():
+    p=await page()
+    data=await p.screenshot(type="png",full_page=False)
+    import base64
+    return {"ok":True,"width":1280,"height":720,"png_base64":base64.b64encode(data).decode()}
+
+@app.post("/input/click")
+async def input_click(req:ClickRequest):
+    if req.button not in {"left","right","middle"}:raise HTTPException(400,"invalid button")
+    p=await page();await p.mouse.click(req.x,req.y,button=req.button)
+    return {"ok":True}
+
+@app.post("/input/type")
+async def input_type(req:TypeRequest):
+    if len(req.text)>4000:raise HTTPException(400,"text too long")
+    p=await page();await p.keyboard.type(req.text,delay=12)
+    return {"ok":True}
+
+@app.post("/input/key")
+async def input_key(req:KeyRequest):
+    allowed={"Enter","Escape","Tab","ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Space","Backspace","Delete","Home","End","PageUp","PageDown"}
+    if req.key not in allowed:raise HTTPException(403,"key is not allow-listed")
+    p=await page();await p.keyboard.press(req.key)
+    return {"ok":True}
+
+@app.post("/input/scroll")
+async def input_scroll(req:ScrollRequest):
+    p=await page();await p.mouse.wheel(req.dx,req.dy)
+    return {"ok":True}
+
+@app.get("/browser/a11y")
+async def browser_a11y():
+    p=await page()
+    # Compact semantic view for planning without OCR.
+    items=await p.locator("a,button,input,textarea,select,[role=button]").evaluate_all("""els => els.slice(0,120).map((e,i)=>({i,tag:e.tagName.toLowerCase(),text:(e.innerText||e.value||e.getAttribute('aria-label')||'').slice(0,180),disabled:!!e.disabled}))""")
+    return {"url":p.url,"title":await p.title(),"elements":items}
