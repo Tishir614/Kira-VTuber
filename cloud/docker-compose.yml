@@ -1,0 +1,20 @@
+services:
+  kira-desktop:
+    image: lscr.io/linuxserver/webtop:ubuntu-kde
+    container_name: kira-cloud-desktop
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=UTC
+      - TITLE=Kira Cloud
+    volumes:
+      - kira_home:/config
+    ports:
+      - "127.0.0.1:3000:3000"
+      - "127.0.0.1:3001:3001"
+    shm_size: "2gb"
+    restart: unless-stopped
+volumes:
+  kira_home:
