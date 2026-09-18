@@ -9,6 +9,7 @@ from .live2d import live2d
 from .microphone import record
 from .stt import stt
 from .avatar_controller import avatar_controller
+from .persistent_memory import persistent_memory
 import asyncio
 
 app = FastAPI(title="Kira VTuber Core", version="0.2.0")
@@ -21,6 +22,9 @@ async def startup_event():
 class ChatRequest(BaseModel):
     message: str
     speak: bool = True
+
+class MemoryRequest(BaseModel):
+    fact: str
 
 @app.get("/")
 async def home(): return FileResponse(WEB / "index.html")
@@ -43,6 +47,19 @@ async def kira_chat(req: ChatRequest):
     try: return await respond(req.message, req.speak)
     except httpx.HTTPError as exc: raise HTTPException(503,f"Local LLM unavailable: {exc}") from exc
     except RuntimeError as exc: raise HTTPException(503,str(exc)) from exc
+
+@app.get("/memory")
+async def get_memory(): return persistent_memory.load()
+
+@app.post("/memory")
+async def add_memory(req: MemoryRequest):
+    persistent_memory.remember(req.fact)
+    return {"ok": True, "memory": persistent_memory.load()}
+
+@app.delete("/memory")
+async def clear_memory():
+    persistent_memory.forget_all()
+    return {"ok": True}
 
 @app.post("/listen")
 async def listen(seconds: int = 6):
