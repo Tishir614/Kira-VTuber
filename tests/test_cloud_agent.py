@@ -78,3 +78,14 @@ def test_learning_memory_is_source_tagged_and_used_by_game_brain():
     assert "learned_guides" in game
     assert "study_url" in media
     assert "download" not in media.lower()
+
+
+def test_research_brain_treats_web_as_untrusted():
+    research=Path("kira/research_brain.py").read_text()
+    assert "untrusted" in research
+    assert "ads, downloads, login pages, purchases" in research
+    assert "study_url" in research
+
+def test_learning_can_be_verified_in_game():
+    learn=Path("kira/learning_memory.py").read_text()
+    assert "verified_in_game" in learn and "successes" in learn and "failures" in learn
