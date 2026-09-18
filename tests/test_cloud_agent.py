@@ -18,3 +18,17 @@ def test_game_brain_uses_real_vision_adapter():
     assert "describe_game" in game
     assert '"/api/chat"' in vision
     assert '"images"' in vision
+
+
+def test_game_vision_is_structured_and_low_temperature():
+    vision=Path("kira/vision.py").read_text()
+    assert '"format":"json"' in vision
+    assert '"temperature":0.15' in vision
+    assert "confidence" in vision and "interactables" in vision
+
+def test_game_learning_and_stagnation_detection():
+    game=Path("kira/game_brain.py").read_text()
+    memory=Path("kira/game_memory.py").read_text()
+    assert "stagnant>=3" in game
+    assert "recall(game_id)" in game
+    assert "runtime/game_memory.json" in memory
