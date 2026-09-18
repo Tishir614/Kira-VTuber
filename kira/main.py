@@ -88,6 +88,7 @@ async def twitch_callback(code: str, state: str):
     try:
         token=await twitch_oauth.exchange(cid,secret,"http://127.0.0.1:8765/auth/twitch/callback",code,state)
         info=await twitch_oauth.validate(token["access_token"])
+        twitch_oauth.start_hourly_validation(cid,secret)
         return {"ok":True,"user":info.get("login") if info else None,"message":"Twitch connected. Return to Kira Studio."}
     except Exception as exc: raise HTTPException(400,str(exc)) from exc
 
@@ -95,8 +96,13 @@ async def twitch_callback(code: str, state: str):
 async def twitch_auth_status():
     token=twitch_oauth.load()
     if not token: return {"connected":False}
-    info=await twitch_oauth.validate(token.get("access_token",""))
-    return {"connected":bool(info),"user":info.get("login") if info else None,"user_id":info.get("user_id") if info else None}
+    local=settings_store.load(); cid=local.get("twitch_client_id",""); secret=local.get("twitch_client_secret","")
+    try:
+        valid=await twitch_oauth.ensure_valid(cid,secret) if cid and secret else None
+        if not valid: return {"connected":False}
+        _,info=valid
+        return {"connected":True,"user":info.get("login"),"user_id":info.get("user_id")}
+    except Exception: return {"connected":False}
 
 @app.delete("/auth/twitch")
 async def twitch_disconnect():
