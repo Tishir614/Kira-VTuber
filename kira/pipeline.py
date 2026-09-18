@@ -7,6 +7,8 @@ from .memory import memory
 from .voice import voice
 from .audio import play_wav
 from .stream_state import state as stream_state
+from .subtitles import subtitles
+from .lipsync import drive_from_wav
 
 async def respond(text: str, speak: bool = True) -> dict:
     history = memory.history()
@@ -16,6 +18,7 @@ async def respond(text: str, speak: bool = True) -> dict:
     emotion = detect_emotion(answer)
     live2d.set_emotion(emotion)
     stream_state.subtitle = answer
+    subtitles.set(answer)
 
     spoken = False
     if speak and voice.available and settings.piper_model:
@@ -23,7 +26,7 @@ async def respond(text: str, speak: bool = True) -> dict:
         try:
             wav = await voice.synthesize(answer, settings.piper_model)
             # Temporary amplitude animation until real PCM/RMS lip-sync lands.
-            task = asyncio.create_task(_animate_mouth())
+            task = asyncio.create_task(drive_from_wav(wav))
             try:
                 await play_wav(wav)
                 spoken = True
