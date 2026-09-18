@@ -1,7 +1,8 @@
 <!doctype html><html><head><meta charset=utf-8><style>
-html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent;font-family:system-ui;color:white}
-#wrap{position:absolute;left:4%;right:4%;bottom:5%;text-align:center}#name{font-weight:800;font-size:28px;text-shadow:0 2px 8px #000}
-#sub{display:inline-block;margin-top:8px;padding:10px 18px;border-radius:16px;background:#0009;font-size:24px;max-width:85%;text-shadow:0 2px 6px #000}
-</style></head><body><div id=wrap><div id=name>KIRA</div><div id=sub>Запуск…</div></div><script>
-let last='';async function tick(){try{let r=await fetch('/overlay/state'),d=await r.json();document.querySelector('#sub').textContent=d.subtitle||'';document.querySelector('#sub').style.display=d.show_subtitles&&d.subtitle?'inline-block':'none'}catch{}}setInterval(tick,250);tick()
-</script></body></html>
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent;font-family:system-ui;color:#fff}
+#hud{position:absolute;left:4%;right:4%;bottom:5%;text-align:center}
+#badge{display:inline-flex;align-items:center;gap:10px;background:#100b19cc;border:1px solid #ffffff22;padding:8px 14px;border-radius:999px;font-weight:800}
+#dot{width:10px;height:10px;border-radius:50%;background:#777}#dot.on{background:#fff;box-shadow:0 0 16px #fff}
+#sub{display:inline-block;margin-top:10px;padding:12px 20px;border-radius:18px;background:#09070dcc;font-size:26px;max-width:85%;text-shadow:0 2px 7px #000}
+#emo{opacity:.7;font-weight:500}</style></head><body><div id=hud><div><div id=badge><span id=dot></span>KIRA <span id=emo>neutral</span></div></div><div id=sub></div></div>
+<script>async function tick(){try{let [s,a]=await Promise.all([fetch('/subtitles').then(r=>r.json()),fetch('/avatar/state').then(r=>r.json())]);sub.textContent=s.text||'';sub.style.display=s.visible&&s.text?'inline-block':'none';emo.textContent=a.emotion;dot.classList.toggle('on',a.speaking)}catch{}}setInterval(tick,120);tick()</script></body></html>
