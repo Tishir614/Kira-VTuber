@@ -23,6 +23,7 @@ from .chat_events import chat_queue
 from .stream_chat import stream_chat
 from .audience import audience
 from .integrations.manager import integrations
+from .integrations.twitch_oauth import twitch_oauth
 import asyncio
 
 app = FastAPI(title="Kira VTuber Core", version="0.2.0")
@@ -41,6 +42,10 @@ class MemoryRequest(BaseModel):
 
 class HandsFreeRequest(BaseModel):
     wake_word: str = "кира"
+
+class TwitchOAuthConfig(BaseModel):
+    client_id: str
+    client_secret: str
 
 class TwitchConnect(BaseModel):
     client_id: str
@@ -68,6 +73,35 @@ class StudioSettings(BaseModel):
 
 @app.get("/")
 async def home(): return FileResponse(WEB / "index.html")
+
+@app.post("/auth/twitch/url")
+async def twitch_auth_url(req: TwitchOAuthConfig):
+    redirect="http://127.0.0.1:8765/auth/twitch/callback"
+    # Client secret is intentionally not returned or persisted here.
+    settings_store.save({"twitch_client_id":req.client_id,"twitch_client_secret":req.client_secret})
+    return {"url":twitch_oauth.authorize_url(req.client_id,redirect)}
+
+@app.get("/auth/twitch/callback")
+async def twitch_callback(code: str, state: str):
+    local=settings_store.load(); cid=local.get("twitch_client_id",""); secret=local.get("twitch_client_secret","")
+    if not cid or not secret: raise HTTPException(400,"Twitch OAuth configuration missing")
+    try:
+        token=await twitch_oauth.exchange(cid,secret,"http://127.0.0.1:8765/auth/twitch/callback",code,state)
+        info=await twitch_oauth.validate(token["access_token"])
+        return {"ok":True,"user":info.get("login") if info else None,"message":"Twitch connected. Return to Kira Studio."}
+    except Exception as exc: raise HTTPException(400,str(exc)) from exc
+
+@app.get("/auth/twitch/status")
+async def twitch_auth_status():
+    token=twitch_oauth.load()
+    if not token: return {"connected":False}
+    info=await twitch_oauth.validate(token.get("access_token",""))
+    return {"connected":bool(info),"user":info.get("login") if info else None,"user_id":info.get("user_id") if info else None}
+
+@app.delete("/auth/twitch")
+async def twitch_disconnect():
+    twitch_oauth.disconnect()
+    return {"ok":True}
 
 @app.post("/integrations/twitch/start")
 async def twitch_start(req: TwitchConnect):
