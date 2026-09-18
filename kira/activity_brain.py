@@ -5,7 +5,7 @@ from dataclasses import dataclass,asdict
 from .settings_store import settings_store
 from .cloud_client import cloud_post,cloud_status
 from .pipeline import respond
-from .media_learner import study_url
+from .research_brain import research
 
 @dataclass
 class ActivityState:
@@ -26,8 +26,7 @@ async def tick():
         if activity=="learn":
             topics=[x.strip() for x in str(s.get("learning_topics","resident evil")).split(",") if x.strip()]
             topic=random.choice(topics or ["resident evil"])
-            await cloud_post("/browser/search",{"query":topic+" прохождение гайд YouTube"})
-            # Search results are opened in Kira Cloud; studying a selected result is handled by the media learner once a URL is available.
+            await research(topic,"",limit=2)
         elif activity=="browse":
             topics=["новости технологий","новые инди-игры","интересные факты о космосе","цифровое искусство"]
             await cloud_post("/browser/search",{"query":random.choice(topics)})
