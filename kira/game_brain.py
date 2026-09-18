@@ -6,6 +6,7 @@ from .cloud_client import _url
 from .llm import chat
 from .vision import analyze_game
 from .game_memory import recall, remember
+from .game_reflex import choose as reflex_choose, record as reflex_record
 
 ACTIONS={"move","look","click","wait","done"}
 KEYS={"w","a","s","d","space","shift","ctrl","e","f","r","q","escape","enter","up","down","left","right"}
@@ -49,6 +50,12 @@ async def run(goal:str,steps:int=20,game_id:str="default"):
         if stagnant>=3:
             remember(game_id,"failure",f"No visible progress after actions: {recent[-3:]}")
             recent=[];stagnant=0;mem=recall(game_id)
+        reflex=reflex_choose(v)
+        if reflex.get("action")!="wait":
+            await execute(reflex);reflex_record(reflex);recent.append(reflex)
+            await asyncio.sleep(.08)
+            try:v=await analyze_game(goal,sig)
+            except Exception:pass
         a=await decide(goal,v,mem,recent)
         trace.append({"vision":v,"action":a});recent.append(a)
         if a.get("action")=="done":
