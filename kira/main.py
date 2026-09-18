@@ -41,6 +41,7 @@ from .live2d_model import status as live2d_model_status, install_zip as install_
 from .mobile_bundle import export_bundle
 from .self_heal import repair as self_repair
 from .cloud_client import cloud_status, cloud_post
+from .cloud_brain import run_goal as cloud_run_goal
 import asyncio
 
 app = FastAPI(title="Kira VTuber Core", version="0.2.0")
@@ -123,6 +124,10 @@ class CloudSearchRequest(BaseModel):
 
 class CloudGameRequest(BaseModel):
     game: str
+
+class CloudGoalRequest(BaseModel):
+    goal: str
+    max_steps: int = 12
 
 class StudioSettings(BaseModel):
     wake_word: str | None = None
@@ -497,6 +502,13 @@ async def kira_cloud_search(req:CloudSearchRequest):
 @app.post("/cloud/games/launch")
 async def kira_cloud_game(req:CloudGameRequest):
     try:return await cloud_post("/games/launch",{"game":req.game})
+    except Exception as exc:raise HTTPException(503,str(exc)) from exc
+
+@app.post("/cloud/goal")
+async def kira_cloud_goal(req:CloudGoalRequest):
+    goal=req.goal.strip()
+    if not goal:raise HTTPException(400,"goal is empty")
+    try:return await cloud_run_goal(goal,req.max_steps)
     except Exception as exc:raise HTTPException(503,str(exc)) from exc
 
 @app.get("/diagnostics")
