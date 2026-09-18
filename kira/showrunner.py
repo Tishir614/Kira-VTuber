@@ -5,6 +5,7 @@ from .obs_websocket import obs_ws
 from .pipeline import respond
 from .stream_chat import stream_chat
 from .settings_store import settings_store
+from .director import director
 
 @dataclass
 class ShowState:
@@ -22,7 +23,7 @@ class ShowRunner:
         try:
             self.state.phase="starting"
             if scene: await obs_ws.set_scene(scene)
-            await obs_ws.start_stream(); stream_chat.start()
+            await obs_ws.start_stream(); stream_chat.start(); director.start()
             self.state.live=True; self.state.started_at=time(); self.state.phase="live"; self.state.last_error=""
             self.task=asyncio.create_task(self._host_loop())
             return self.snapshot()
@@ -31,6 +32,7 @@ class ShowRunner:
     async def stop(self):
         self.state.phase="stopping"
         if self.task and not self.task.done(): self.task.cancel()
+        director.stop()
         try: await obs_ws.stop_stream()
         finally:
             self.state.live=False; self.state.phase="idle"
