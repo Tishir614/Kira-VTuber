@@ -16,7 +16,7 @@ from .personality import personality
 from .diagnostics import diagnostics
 from .setup import setup_status, pull_ollama_model
 from .devices import audio_devices, default_audio
-from .selftest import microphone_test, stt_test, voice_test
+from .selftest import microphone_test, stt_test, voice_test, broadcast_test
 from .model_manager import ollama_models
 from .stream_state import snapshot as stream_snapshot
 from .chat_events import chat_queue
@@ -253,6 +253,14 @@ async def patch_settings(req: StudioSettings):
 
 @app.get("/devices/audio")
 async def devices_audio(): return {"devices":audio_devices(),"default":default_audio()}
+
+@app.get("/broadcast/status")
+async def broadcast_status():
+    result=await broadcast_test(); result["integrations"]=integrations.snapshot(); result["avatar"]=live2d.snapshot(); return result
+
+@app.post("/broadcast/test")
+async def test_broadcast():
+    result=await broadcast_test(); result["integrations"]=integrations.snapshot(); return result
 
 @app.post("/selftest/microphone")
 async def test_microphone():
