@@ -407,6 +407,15 @@ async def setup_pull(req: ModelPullRequest):
     try: return await pull_ollama_model(req.model)
     except RuntimeError as exc: raise HTTPException(503,str(exc)) from exc
 
+@app.get("/manifest.webmanifest")
+async def pwa_manifest(): return FileResponse(WEB / "manifest.webmanifest",media_type="application/manifest+json")
+@app.get("/sw.js")
+async def pwa_sw(): return FileResponse(WEB / "sw.js",media_type="application/javascript")
+@app.get("/pwa/{asset}")
+async def pwa_asset(asset:str):
+    p=WEB/"pwa"/asset
+    if not p.is_file(): raise HTTPException(404,"PWA asset not found")
+    return FileResponse(p)
 @app.get("/studio")
 async def studio(): return FileResponse(WEB / "studio.html")
 
