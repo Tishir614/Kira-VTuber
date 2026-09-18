@@ -24,6 +24,7 @@ from .stream_chat import stream_chat
 from .audience import audience
 from .integrations.manager import integrations
 from .integrations.twitch_oauth import twitch_oauth
+from .integrations.youtube_oauth import youtube_oauth
 from .stream_brain import stream_brain
 from .viewer_memory import viewer_memory
 from .subtitles import subtitles
@@ -63,6 +64,10 @@ class HandsFreeRequest(BaseModel):
     wake_word: str = "кира"
 
 class TwitchOAuthConfig(BaseModel):
+    client_id: str
+    client_secret: str
+
+class YouTubeOAuthConfig(BaseModel):
     client_id: str
     client_secret: str
 
@@ -122,6 +127,8 @@ class StudioSettings(BaseModel):
     watchdog_failure_limit: int | None = None
     watchdog_safe_stop: bool | None = None
     watchdog_reconnect_twitch: bool | None = None
+    youtube_client_id: str | None = None
+    youtube_client_secret: str | None = None
 
 @app.get("/")
 async def home(): return FileResponse(WEB / "index.html")
@@ -182,6 +189,45 @@ async def twitch_autostart():
     if not valid: raise HTTPException(401,"Twitch is not connected")
     token,info=valid; integrations.start_twitch(cid,token["access_token"],info["user_id"],info["user_id"]); stream_chat.start()
     return {"ok":True,"user":info.get("login")}
+
+@app.post("/auth/youtube/url")
+async def youtube_auth_url(req: YouTubeOAuthConfig):
+    redirect="http://127.0.0.1:8765/auth/youtube/callback"
+    settings_store.save({"youtube_client_id":req.client_id,"youtube_client_secret":req.client_secret})
+    return {"url":youtube_oauth.authorize_url(req.client_id,redirect)}
+
+@app.get("/auth/youtube/callback")
+async def youtube_callback(code:str,state:str):
+    s=settings_store.load();cid=s.get("youtube_client_id","");secret=s.get("youtube_client_secret","")
+    try:
+        await youtube_oauth.exchange(cid,secret,"http://127.0.0.1:8765/auth/youtube/callback",code,state)
+        token=await youtube_oauth.access_token(cid,secret);active=await youtube_oauth.active_broadcast(token)
+        if active and active.get("live_chat_id"): integrations.start_youtube_oauth(token,active["live_chat_id"]);stream_chat.start()
+        return {"ok":True,"active":active}
+    except Exception as exc: raise HTTPException(400,str(exc)) from exc
+
+@app.get("/auth/youtube/status")
+async def youtube_auth_status():
+    s=settings_store.load();cid=s.get("youtube_client_id","");secret=s.get("youtube_client_secret","")
+    try:
+        token=await youtube_oauth.access_token(cid,secret) if cid and secret else None
+        if not token:return {"connected":False}
+        active=await youtube_oauth.active_broadcast(token)
+        return {"connected":True,"active":active}
+    except Exception as exc:return {"connected":False,"error":str(exc)}
+
+@app.post("/integrations/youtube/autostart")
+async def youtube_autostart():
+    s=settings_store.load();cid=s.get("youtube_client_id","");secret=s.get("youtube_client_secret","")
+    token=await youtube_oauth.access_token(cid,secret) if cid and secret else None
+    if not token:raise HTTPException(401,"YouTube is not connected")
+    active=await youtube_oauth.active_broadcast(token)
+    if not active or not active.get("live_chat_id"):raise HTTPException(404,"No active YouTube live broadcast")
+    integrations.start_youtube_oauth(token,active["live_chat_id"]);stream_chat.start();return {"ok":True,**active}
+
+@app.delete("/auth/youtube")
+async def youtube_disconnect():
+    await integrations.stop("youtube");youtube_oauth.disconnect();return {"ok":True}
 
 @app.get("/obs/ws/status")
 async def obs_ws_status():
