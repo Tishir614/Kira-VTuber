@@ -134,6 +134,7 @@ class CloudGoalRequest(BaseModel):
 class GameGoalRequest(BaseModel):
     goal: str
     steps: int = 20
+    game_id: str = "default"
 
 class StudioSettings(BaseModel):
     wake_word: str | None = None
@@ -521,7 +522,7 @@ async def kira_cloud_goal(req:CloudGoalRequest):
 async def kira_game_goal(req:GameGoalRequest):
     goal=req.goal.strip()
     if not goal:raise HTTPException(400,"goal is empty")
-    try:return await game_run(goal,req.steps)
+    try:return await game_run(goal,req.steps,req.game_id)
     except Exception as exc:raise HTTPException(503,str(exc)) from exc
 
 @app.get("/vision/status")
