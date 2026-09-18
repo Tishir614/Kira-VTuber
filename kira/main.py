@@ -54,6 +54,7 @@ from .learning_memory import recall as learned_recall
 from .research_brain import research
 from .adaptive_learning import snapshot as adaptive_learning_status
 from .experience_engine import summary as game_experience_summary
+from .proxy import status as proxy_status
 import asyncio
 
 app = FastAPI(title="Kira VTuber Core", version="0.2.0")
@@ -187,6 +188,9 @@ class StudioSettings(BaseModel):
     watchdog_reconnect_twitch: bool | None = None
     youtube_client_id: str | None = None
     youtube_client_secret: str | None = None
+    proxy_enabled: bool | None = None
+    proxy_url: str | None = None
+    proxy_services: list[str] | None = None
 
 @app.get("/")
 async def home(): return FileResponse(WEB / "index.html")
@@ -367,6 +371,9 @@ async def learning_study(req:StudyRequest):
 
 @app.get("/learning/{game}")
 async def learning_state(game:str,q:str=""): return {"items":learned_recall(game,q,50)}
+
+@app.get("/proxy/status")
+async def kira_proxy_status(): return await proxy_status()
 
 @app.get("/activity")
 async def activity_state(): return activity_snapshot()
