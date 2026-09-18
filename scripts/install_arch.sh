@@ -21,7 +21,9 @@ if command -v ollama >/dev/null; then
   (ollama serve >/tmp/kira-ollama.log 2>&1 &) || true
   sleep 2
   echo "== Загрузка локальной LLM =="
-  ollama pull qwen3:4b || echo "! Модель не скачалась. Повтори позже из Kira Studio."
+  ollama pull qwen3:4b || echo "! Текстовая модель не скачалась. Повтори позже из Kira Studio."
+  echo "== Загрузка локального зрения Киры =="
+  ollama pull qwen2.5vl:3b || echo "! Vision-модель не скачалась. Игровое зрение будет недоступно."
 fi
 
 echo "== Проверка Kira Core =="
