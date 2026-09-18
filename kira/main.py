@@ -13,6 +13,7 @@ from .persistent_memory import persistent_memory
 from .handsfree import handsfree
 from .settings_store import settings_store
 from .personality import personality
+from .diagnostics import diagnostics
 import asyncio
 
 app = FastAPI(title="Kira VTuber Core", version="0.2.0")
@@ -56,6 +57,9 @@ async def patch_settings(req: StudioSettings):
         for key in ("warmth","humor","energy","verbosity"):
             if key in p: setattr(personality,key,max(0.0,min(1.0,float(p[key]))))
     return settings_store.save(patch)
+
+@app.get("/diagnostics")
+async def get_diagnostics(): return await diagnostics()
 
 @app.get("/health")
 async def health():
