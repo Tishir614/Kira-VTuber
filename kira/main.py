@@ -46,6 +46,7 @@ from .game_brain import run as game_run
 from .vision import status as vision_status, describe_game
 from .game_reflex import snapshot as reflex_status
 from .game_profile import get as get_game_profile
+from .autonomy import autonomy
 import asyncio
 
 app = FastAPI(title="Kira VTuber Core", version="0.2.0")
@@ -58,6 +59,7 @@ async def startup_event():
     if local.get("schedule_enabled",False): schedule.start()
     if local.get("autopilot_enabled",False): autopilot.start()
     if local.get("watchdog_enabled",True): watchdog.start()
+    if local.get("master_autonomy_enabled",False): autonomy.start()
 
 class TelegramPostRequest(BaseModel):
     text: str
@@ -331,6 +333,15 @@ async def director_status(): return director.snapshot()
 
 @app.get("/show")
 async def show_status(): return showrunner.snapshot()
+
+@app.get("/autonomy")
+async def autonomy_state(): return autonomy.snapshot()
+
+@app.post("/autonomy/start")
+async def autonomy_start(): autonomy.start(); return {"ok":True,**autonomy.snapshot()}
+
+@app.post("/autonomy/stop")
+async def autonomy_stop(): autonomy.stop(); return {"ok":True,**autonomy.snapshot()}
 
 @app.get("/autopilot")
 async def autopilot_state(): return autopilot.snapshot()
