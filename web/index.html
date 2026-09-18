@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kira VTuber</title><style>
+body{margin:0;background:#0c0912;color:#eee;font-family:system-ui;display:grid;place-items:center;height:100vh}
+.card{width:min(720px,92vw);background:#171020;border:1px solid #352646;border-radius:24px;padding:24px}
+#orb{width:150px;height:150px;border-radius:50%;margin:10px auto;background:radial-gradient(circle at 35% 30%,#d7b5ff,#76509d 45%,#21152e);transition:.2s}
+.speaking{transform:scale(1.06);filter:brightness(1.25)}
+.row{display:flex;gap:8px}input{flex:1;padding:14px;border-radius:14px;border:1px solid #46345a;background:#0e0a13;color:white}
+button{padding:12px 18px;border:0;border-radius:14px;cursor:pointer}#log{min-height:120px;white-space:pre-wrap}
+small{opacity:.7}</style></head><body><main class="card">
+<div id="orb"></div><h1>Kira VTuber Core</h1><small id="state">connecting…</small><div id="log"></div>
+<div class="row"><input id="msg" placeholder="Напиши Кире…"><button id="send">Отправить</button></div>
+<script>
+const q=s=>document.querySelector(s), log=q('#log'), orb=q('#orb'), state=q('#state');
+async function send(){const m=q('#msg').value.trim();if(!m)return;q('#msg').value='';log.textContent='Ты: '+m+'\nКира думает…';
+const r=await fetch('/chat',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({message:m,speak:true})});
+const d=await r.json();log.textContent='Ты: '+m+'\n\nКира: '+(d.answer||d.detail); }
+q('#send').onclick=send;q('#msg').onkeydown=e=>{if(e.key==='Enter')send()};
+setInterval(async()=>{try{const d=await (await fetch('/avatar/state')).json();state.textContent=d.emotion+(d.speaking?' • говорит':'');orb.classList.toggle('speaking',d.speaking)}catch{}},250);
+</script></main></body></html>
