@@ -1,5 +1,5 @@
 from pathlib import Path
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 import httpx, uvicorn
@@ -37,6 +37,7 @@ from .showrunner import showrunner
 from .director import director
 from .schedule import schedule
 from .watchdog import watchdog
+from .live2d_model import status as live2d_model_status, install_zip as install_live2d_zip, MODEL_DIR
 import asyncio
 
 app = FastAPI(title="Kira VTuber Core", version="0.2.0")
@@ -462,6 +463,31 @@ async def health():
             ollama=(await client.get(f"{settings.llm_base_url}/api/tags")).is_success
     except Exception: pass
     return {"ok":True,"ollama":ollama,"model":settings.llm_model}
+
+@app.get("/live2d")
+async def live2d_page(): return FileResponse(WEB / "live2d.html")
+
+@app.get("/live2d/status")
+async def live2d_status(): return live2d_model_status()
+
+@app.get("/live2d/model/{asset_path:path}")
+async def live2d_asset(asset_path:str):
+    p=(MODEL_DIR/asset_path).resolve()
+    if MODEL_DIR.resolve() not in p.parents and p!=MODEL_DIR.resolve(): raise HTTPException(400,"invalid asset path")
+    if not p.is_file(): raise HTTPException(404,"Live2D asset not found")
+    return FileResponse(p)
+
+@app.post("/live2d/install")
+async def live2d_install(file:UploadFile=File(...)):
+    if not (file.filename or "").lower().endswith(".zip"): raise HTTPException(400,"Upload a Live2D ZIP")
+    tmp=MODEL_DIR.parent/"upload.zip";tmp.parent.mkdir(parents=True,exist_ok=True)
+    try:
+        with tmp.open("wb") as out:
+            while chunk:=await file.read(1024*1024):out.write(chunk)
+        return install_live2d_zip(tmp)
+    except Exception as exc: raise HTTPException(400,str(exc)) from exc
+    finally:
+        tmp.unlink(missing_ok=True)
 
 @app.get("/avatar/state")
 async def avatar_state(): return live2d.snapshot()
