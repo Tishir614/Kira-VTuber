@@ -475,12 +475,29 @@ async def get_diagnostics(): return await diagnostics()
 
 @app.get("/health")
 async def health():
-    ollama=False
+    """Readiness check used by Kira Studio and Android clients.
+
+    The Core process can be alive while its local LLM is unavailable.  Report
+    that distinction instead of advertising a healthy AI with `ok: true`.
+    """
+    ollama = False
+    error = None
     try:
         async with httpx.AsyncClient(timeout=2) as client:
-            ollama=(await client.get(f"{settings.llm_base_url}/api/tags")).is_success
-    except Exception: pass
-    return {"ok":True,"ollama":ollama,"model":settings.llm_model}
+            response = await client.get(f"{settings.llm_base_url}/api/tags")
+            ollama = response.is_success
+            if not ollama:
+                error = f"Ollama returned HTTP {response.status_code}"
+    except Exception as exc:
+        error = f"{type(exc).__name__}: {exc}"
+
+    return {
+        "ok": ollama,
+        "core": True,
+        "ollama": ollama,
+        "model": settings.llm_model,
+        "error": error,
+    }
 
 @app.get("/live2d")
 async def live2d_page(): return FileResponse(WEB / "live2d.html")
