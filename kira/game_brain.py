@@ -10,6 +10,8 @@ from .game_reflex import choose as reflex_choose, record as reflex_record
 from .game_profile import get as game_profile, session as profile_session, step as profile_step, death as profile_death, update_world
 from .learning_memory import recall as recall_learned
 from .adaptive_learning import learn_when_stuck
+from .experience_engine import record as record_experience, summary as experience_summary
+from .learning_memory import feedback as learning_feedback
 
 ACTIONS={"move","look","click","wait","done"}
 KEYS={"w","a","s","d","space","shift","ctrl","e","f","r","q","escape","enter","up","down","left","right"}
@@ -20,6 +22,7 @@ Goal: {goal}
 Vision JSON: {json.dumps(vision,ensure_ascii=False)[:7000]}
 Learned memory and game profile: {json.dumps(memory,ensure_ascii=False)[:2500]}
 Recent actions: {json.dumps(recent[-5:],ensure_ascii=False)[:2000]}
+Learned action outcomes: {json.dumps(memory.get('experience',{}),ensure_ascii=False)[:2500]}
 Choose ONE small action. Prefer visible evidence, avoid repeating an action that caused no progress.
 If confidence is low, look around or wait rather than committing to a long move.
 Return ONLY JSON:
@@ -45,7 +48,7 @@ def signature(v:dict)->str:
     return json.dumps({k:v.get(k) for k in ("scene","ui_state","player_state","progress")},ensure_ascii=False,sort_keys=True)[:1200]
 
 async def run(goal:str,steps:int=20,game_id:str="default"):
-    trace=[];recent=[];previous="";stagnant=0;profile_session(game_id);mem={"memory":recall(game_id),"profile":game_profile(game_id),"learned_guides":recall_learned(game_id,goal)}
+    trace=[];recent=[];previous="";stagnant=0;profile_session(game_id);mem={"memory":recall(game_id),"profile":game_profile(game_id),"learned_guides":recall_learned(game_id,goal),"experience":experience_summary(game_id)}
     for _ in range(max(1,min(steps,60))):
         try:v=await analyze_game(goal,previous)
         except Exception as exc:v={"scene":f"Vision unavailable: {exc}","confidence":0}
@@ -58,7 +61,7 @@ async def run(goal:str,steps:int=20,game_id:str="default"):
             remember(game_id,"failure",f"No visible progress after actions: {recent[-3:]}")
             learned=await learn_when_stuck(game_id,goal,v,stagnant,recent)
             if learned:
-                mem={"memory":recall(game_id),"profile":game_profile(game_id),"learned_guides":recall_learned(game_id,goal)}
+                mem={"memory":recall(game_id),"profile":game_profile(game_id),"learned_guides":recall_learned(game_id,goal),"experience":experience_summary(game_id)}
             recent=[];stagnant=0;mem={"memory":recall(game_id),"profile":game_profile(game_id),"learned_guides":recall_learned(game_id,goal)}
         reflex=reflex_choose(v)
         if reflex.get("action")!="wait":
@@ -71,6 +74,13 @@ async def run(goal:str,steps:int=20,game_id:str="default"):
         if a.get("action")=="done":
             remember(game_id,"note",f"Goal completed: {goal}. Final state: {sig}")
             return {"ok":True,"done":True,"trace":trace}
-        await execute(a);previous=sig
+        before=v.copy();await execute(a);await asyncio.sleep(.18)
+        try:
+            after=await analyze_game(goal,sig)
+            result=record_experience(game_id,a,before,after,mem.get("learned_guides",[]))
+            for guide in mem.get("learned_guides",[])[:4]:
+                if guide.get("source_url") and result in {"progress","death"}:learning_feedback(game_id,guide["source_url"],result=="progress")
+        except Exception:pass
+        previous=sig
     remember(game_id,"note",f"Session ended at step limit. Goal: {goal}")
     return {"ok":True,"done":False,"trace":trace,"reason":"step limit reached"}
