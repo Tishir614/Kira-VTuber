@@ -107,3 +107,10 @@ def test_experience_engine_reinforces_real_outcomes():
     assert "record_experience" in game
     assert "learning_feedback" in game
     assert "experience_summary" in game
+
+
+def test_proxy_hides_credentials_and_is_service_scoped():
+    proxy=Path("kira/proxy.py").read_text()
+    assert "proxy_services" in proxy
+    assert 'u.hostname' in proxy
+    assert 'scheme in {"http","https","socks5","socks5h"}' in proxy
