@@ -19,7 +19,7 @@ async def analyze_game(goal:str="", previous:str="")->dict:
     prompt="""Analyze this single-player game frame. Return ONLY JSON with:
 scene (short description), ui_state (gameplay|menu|dialog|loading|unknown),
 player_state, threats (array), interactables (array), visible_text (array),
-navigation (array of useful directions), progress, suggested_action, confidence (0..1).
+navigation (array of useful directions), location, quests (array), inventory (array), death_detected (boolean), progress, suggested_action, confidence (0..1).
 Use only visible evidence. Never invent hidden state."""
     if goal:prompt+=f"\nGoal: {goal}"
     if previous:prompt+=f"\nPrevious observation for change detection: {previous[:1200]}"
