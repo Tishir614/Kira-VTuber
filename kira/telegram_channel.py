@@ -1,4 +1,5 @@
 import httpx
+from .proxy import client as proxy_client
 from .settings_store import settings_store
 
 async def telegram_status():
@@ -14,5 +15,5 @@ async def telegram_status():
 async def telegram_post(text:str):
     s=settings_store.load(); token=s.get("telegram_bot_token",""); chat=s.get("telegram_channel","")
     if not token or not chat: raise RuntimeError("Telegram bot/channel not configured")
-    async with httpx.AsyncClient(timeout=20) as c:
+    async with proxy_client("telegram",timeout=20) as c:
         r=await c.post(f"https://api.telegram.org/bot{token}/sendMessage",json={"chat_id":chat,"text":text[:4096]}); r.raise_for_status(); return r.json()
