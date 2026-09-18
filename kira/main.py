@@ -53,6 +53,7 @@ from .media_learner import study_url
 from .learning_memory import recall as learned_recall
 from .research_brain import research
 from .adaptive_learning import snapshot as adaptive_learning_status
+from .experience_engine import summary as game_experience_summary
 import asyncio
 
 app = FastAPI(title="Kira VTuber Core", version="0.2.0")
@@ -576,6 +577,9 @@ async def kira_game_goal(req:GameGoalRequest):
     if not goal:raise HTTPException(400,"goal is empty")
     try:return await game_run(goal,req.steps,req.game_id)
     except Exception as exc:raise HTTPException(503,str(exc)) from exc
+
+@app.get("/cloud/game/experience/{game_id}")
+async def kira_game_experience(game_id:str): return {"actions":game_experience_summary(game_id)}
 
 @app.get("/cloud/game/profile/{game_id}")
 async def kira_game_profile(game_id:str): return get_game_profile(game_id)
