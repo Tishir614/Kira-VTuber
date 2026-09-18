@@ -22,6 +22,7 @@ from .stream_state import snapshot as stream_snapshot
 from .chat_events import chat_queue
 from .stream_chat import stream_chat
 from .audience import audience
+from .integrations.manager import integrations
 import asyncio
 
 app = FastAPI(title="Kira VTuber Core", version="0.2.0")
@@ -41,6 +42,10 @@ class MemoryRequest(BaseModel):
 class HandsFreeRequest(BaseModel):
     wake_word: str = "кира"
 
+class YouTubeConnect(BaseModel):
+    api_key: str
+    live_chat_id: str
+
 class StreamMessage(BaseModel):
     platform: str = "local"
     user: str
@@ -57,6 +62,20 @@ class StudioSettings(BaseModel):
 
 @app.get("/")
 async def home(): return FileResponse(WEB / "index.html")
+
+@app.get("/integrations")
+async def integration_state(): return integrations.snapshot()
+
+@app.post("/integrations/youtube/start")
+async def youtube_start(req: YouTubeConnect):
+    integrations.start_youtube(req.api_key,req.live_chat_id)
+    stream_chat.start()
+    return {"ok":True}
+
+@app.post("/integrations/youtube/stop")
+async def youtube_stop():
+    await integrations.stop_youtube()
+    return {"ok":True}
 
 @app.post("/stream/start")
 async def stream_start(): stream_chat.start(); return {"ok":True,"enabled":True}
