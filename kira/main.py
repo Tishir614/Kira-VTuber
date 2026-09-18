@@ -42,6 +42,12 @@ class MemoryRequest(BaseModel):
 class HandsFreeRequest(BaseModel):
     wake_word: str = "кира"
 
+class TwitchConnect(BaseModel):
+    client_id: str
+    access_token: str
+    broadcaster_user_id: str
+    bot_user_id: str
+
 class YouTubeConnect(BaseModel):
     api_key: str
     live_chat_id: str
@@ -63,6 +69,17 @@ class StudioSettings(BaseModel):
 @app.get("/")
 async def home(): return FileResponse(WEB / "index.html")
 
+@app.post("/integrations/twitch/start")
+async def twitch_start(req: TwitchConnect):
+    integrations.start_twitch(req.client_id,req.access_token,req.broadcaster_user_id,req.bot_user_id)
+    stream_chat.start()
+    return {"ok":True}
+
+@app.post("/integrations/twitch/stop")
+async def twitch_stop():
+    await integrations.stop("twitch")
+    return {"ok":True}
+
 @app.get("/integrations")
 async def integration_state(): return integrations.snapshot()
 
@@ -74,7 +91,7 @@ async def youtube_start(req: YouTubeConnect):
 
 @app.post("/integrations/youtube/stop")
 async def youtube_stop():
-    await integrations.stop_youtube()
+    await integrations.stop("youtube")
     return {"ok":True}
 
 @app.post("/stream/start")
