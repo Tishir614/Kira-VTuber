@@ -6,6 +6,7 @@ from .llm import chat
 from .memory import memory
 from .voice import voice
 from .audio import play_wav
+from .stream_state import state as stream_state
 
 async def respond(text: str, speak: bool = True) -> dict:
     history = memory.history()
@@ -14,6 +15,7 @@ async def respond(text: str, speak: bool = True) -> dict:
     memory.add("assistant", answer)
     emotion = detect_emotion(answer)
     live2d.set_emotion(emotion)
+    stream_state.subtitle = answer
 
     spoken = False
     if speak and voice.available and settings.piper_model:
