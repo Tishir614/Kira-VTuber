@@ -1,0 +1,16 @@
+<!doctype html><html><head><meta charset="utf-8"><style>html,body,#c{margin:0;width:100%;height:100%;overflow:hidden;background:transparent}#err{position:fixed;inset:20px;color:#fff;font:16px system-ui;text-shadow:0 2px 5px #000}</style></head><body><canvas id="c"></canvas><div id="err"></div>
+<script src="https://cubism.live2d.com/sdk-web/cubismcore/live2dcubismcore.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pixi.js@7/dist/pixi.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pixi-live2d-display@0.4.0/dist/cubism4.min.js"></script>
+<script>
+(async()=>{try{
+ const info=await fetch('/live2d/status').then(r=>r.json());if(!info.installed)throw Error('Модель Киры ещё не установлена');
+ const app=new PIXI.Application({view:c,resizeTo:window,backgroundAlpha:0,autoStart:true});const M=PIXI.live2d.Live2DModel;
+ const model=await M.from(info.model,{autoInteract:false});app.stage.addChild(model);
+ function fit(){let s=Math.min(innerWidth/model.width,innerHeight/model.height)*.95;model.scale.set(s);model.anchor.set(.5,.5);model.x=innerWidth/2;model.y=innerHeight/2}fit();addEventListener('resize',fit);
+ const core=model.internalModel.coreModel;
+ function set(id,v){try{core.setParameterValueById(id,v)}catch{}}
+ async function tick(){try{let a=await fetch('/avatar/state').then(r=>r.json());set('ParamAngleX',a.angle_x||0);set('ParamAngleY',a.angle_y||0);set('ParamAngleZ',a.angle_z||0);set('ParamBodyAngleX',(a.angle_x||0)*.25);set('ParamEyeBallX',(a.angle_x||0)/30);set('ParamEyeBallY',-(a.angle_y||0)/30);set('ParamMouthOpenY',Math.max(0,Math.min(1,a.mouth_open||0)));}catch{}requestAnimationFrame(tick)}tick();
+ err.remove();
+}catch(e){err.textContent='Live2D: '+e.message}})();
+</script></body></html>
