@@ -29,6 +29,8 @@ from .viewer_memory import viewer_memory
 from .subtitles import subtitles
 from .obs import obs_config
 from .voice_catalog import voice_models
+from .autopilot import autopilot
+from .telegram_channel import telegram_status, telegram_post
 import asyncio
 
 app = FastAPI(title="Kira VTuber Core", version="0.2.0")
@@ -37,6 +39,9 @@ WEB = Path(__file__).resolve().parent.parent / "web"
 @app.on_event("startup")
 async def startup_event():
     asyncio.create_task(avatar_controller.idle_loop())
+
+class TelegramPostRequest(BaseModel):
+    text: str
 
 class ChatRequest(BaseModel):
     message: str
@@ -89,6 +94,9 @@ class StudioSettings(BaseModel):
     voice_enabled: bool | None = None
     volume: float | None = None
     personality: dict | None = None
+    telegram_bot_token: str | None = None
+    telegram_channel: str | None = None
+    autopilot_post_interval_hours: float | None = None
 
 @app.get("/")
 async def home(): return FileResponse(WEB / "index.html")
@@ -149,6 +157,23 @@ async def twitch_autostart():
     if not valid: raise HTTPException(401,"Twitch is not connected")
     token,info=valid; integrations.start_twitch(cid,token["access_token"],info["user_id"],info["user_id"]); stream_chat.start()
     return {"ok":True,"user":info.get("login")}
+
+@app.get("/autopilot")
+async def autopilot_state(): return autopilot.snapshot()
+
+@app.post("/autopilot/start")
+async def autopilot_start(): autopilot.start(); stream_chat.start(); return {"ok":True,**autopilot.snapshot()}
+
+@app.post("/autopilot/stop")
+async def autopilot_stop(): autopilot.stop(); return {"ok":True,**autopilot.snapshot()}
+
+@app.get("/integrations/telegram/status")
+async def tg_status(): return await telegram_status()
+
+@app.post("/integrations/telegram/post")
+async def tg_post(req: TelegramPostRequest):
+    try: return await telegram_post(req.text)
+    except Exception as exc: raise HTTPException(503,str(exc)) from exc
 
 @app.get("/integrations")
 async def integration_state(): return integrations.snapshot()
@@ -245,6 +270,7 @@ async def patch_settings(req: StudioSettings):
     patch={k:v for k,v in req.model_dump().items() if v is not None}
     if "volume" in patch: patch["volume"]=max(0.0,min(1.0,patch["volume"]))
     if "voice_speed" in patch: patch["voice_speed"]=max(0.5,min(2.0,patch["voice_speed"]))
+    if "autopilot_post_interval_hours" in patch: patch["autopilot_post_interval_hours"]=max(1.0,min(168.0,patch["autopilot_post_interval_hours"]))
     if "personality" in patch:
         p=patch["personality"]
         for key in ("warmth","humor","energy","verbosity"):
