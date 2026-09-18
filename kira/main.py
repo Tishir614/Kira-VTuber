@@ -108,7 +108,10 @@ async def twitch_callback(code: str, state: str):
         token=await twitch_oauth.exchange(cid,secret,"http://127.0.0.1:8765/auth/twitch/callback",code,state)
         info=await twitch_oauth.validate(token["access_token"])
         twitch_oauth.start_hourly_validation(cid,secret)
-        return {"ok":True,"user":info.get("login") if info else None,"message":"Twitch connected. Return to Kira Studio."}
+        if info:
+            integrations.start_twitch(cid,token["access_token"],info["user_id"],info["user_id"])
+            stream_chat.start()
+        return {"ok":True,"user":info.get("login") if info else None,"message":"Twitch connected and chat started."}
     except Exception as exc: raise HTTPException(400,str(exc)) from exc
 
 @app.get("/auth/twitch/status")
@@ -138,6 +141,14 @@ async def twitch_start(req: TwitchConnect):
 async def twitch_stop():
     await integrations.stop("twitch")
     return {"ok":True}
+
+@app.post("/integrations/twitch/autostart")
+async def twitch_autostart():
+    local=settings_store.load(); cid=local.get("twitch_client_id",""); secret=local.get("twitch_client_secret","")
+    valid=await twitch_oauth.ensure_valid(cid,secret) if cid and secret else None
+    if not valid: raise HTTPException(401,"Twitch is not connected")
+    token,info=valid; integrations.start_twitch(cid,token["access_token"],info["user_id"],info["user_id"]); stream_chat.start()
+    return {"ok":True,"user":info.get("login")}
 
 @app.get("/integrations")
 async def integration_state(): return integrations.snapshot()
