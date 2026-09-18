@@ -16,5 +16,16 @@ services:
       - "127.0.0.1:3001:3001"
     shm_size: "2gb"
     restart: unless-stopped
+  kira-agent:
+    build:
+      context: ..
+      dockerfile: cloud/agent/Dockerfile
+    container_name: kira-cloud-agent
+    environment:
+      - KIRA_GAME_ALLOWLIST=${KIRA_GAME_ALLOWLIST:-}
+    network_mode: "service:kira-desktop"
+    depends_on:
+      - kira-desktop
+    restart: unless-stopped
 volumes:
   kira_home:
