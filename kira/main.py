@@ -39,6 +39,7 @@ from .schedule import schedule
 from .watchdog import watchdog
 from .live2d_model import status as live2d_model_status, install_zip as install_live2d_zip, MODEL_DIR
 from .mobile_bundle import export_bundle
+from .self_heal import repair as self_repair
 import asyncio
 
 app = FastAPI(title="Kira VTuber Core", version="0.2.0")
@@ -472,6 +473,10 @@ async def test_voice():
 
 @app.get("/diagnostics")
 async def get_diagnostics(): return await diagnostics()
+
+@app.post("/repair")
+async def repair_core():
+    return await self_repair()
 
 @app.get("/health")
 async def health():
