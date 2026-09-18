@@ -61,3 +61,10 @@ def test_master_autonomy_is_explicit_on_off():
     assert "master_autonomy_enabled" in core
     assert "/autonomy/start" in studio and "/autonomy/stop" in studio
     assert "autopilot.start()" in core and "watchdog.start()" in core
+
+
+def test_autonomous_activity_stays_bounded():
+    activity=Path("kira/activity_brain.py").read_text()
+    assert "subprocess" not in activity
+    assert 'cloud_post("/games/launch"' in activity
+    assert "autonomous_games" in activity
