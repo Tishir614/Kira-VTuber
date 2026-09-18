@@ -7,6 +7,7 @@ from .llm import chat
 from .vision import analyze_game
 from .game_memory import recall, remember
 from .game_reflex import choose as reflex_choose, record as reflex_record
+from .game_profile import get as game_profile, session as profile_session, step as profile_step, death as profile_death, update_world
 
 ACTIONS={"move","look","click","wait","done"}
 KEYS={"w","a","s","d","space","shift","ctrl","e","f","r","q","escape","enter","up","down","left","right"}
@@ -15,7 +16,7 @@ async def decide(goal:str, vision:dict, memory:dict, recent:list):
     prompt=f"""You are Kira playing a single-player game in your isolated desktop.
 Goal: {goal}
 Vision JSON: {json.dumps(vision,ensure_ascii=False)[:7000]}
-Learned memory: {json.dumps(memory,ensure_ascii=False)[:2500]}
+Learned memory and game profile: {json.dumps(memory,ensure_ascii=False)[:2500]}
 Recent actions: {json.dumps(recent[-5:],ensure_ascii=False)[:2000]}
 Choose ONE small action. Prefer visible evidence, avoid repeating an action that caused no progress.
 If confidence is low, look around or wait rather than committing to a long move.
@@ -42,14 +43,18 @@ def signature(v:dict)->str:
     return json.dumps({k:v.get(k) for k in ("scene","ui_state","player_state","progress")},ensure_ascii=False,sort_keys=True)[:1200]
 
 async def run(goal:str,steps:int=20,game_id:str="default"):
-    trace=[];recent=[];previous="";stagnant=0;mem=recall(game_id)
+    trace=[];recent=[];previous="";stagnant=0;profile_session(game_id);mem={"memory":recall(game_id),"profile":game_profile(game_id)}
     for _ in range(max(1,min(steps,60))):
         try:v=await analyze_game(goal,previous)
         except Exception as exc:v={"scene":f"Vision unavailable: {exc}","confidence":0}
+        update_world(game_id,v);profile_step(game_id)
+        if v.get("death_detected"):
+            profile_death(game_id,str(v.get("scene","death")))
+            remember(game_id,"failure","Death detected: "+str(v.get("scene",""))[:500])
         sig=signature(v);stagnant=stagnant+1 if sig==previous else 0
         if stagnant>=3:
             remember(game_id,"failure",f"No visible progress after actions: {recent[-3:]}")
-            recent=[];stagnant=0;mem=recall(game_id)
+            recent=[];stagnant=0;mem={"memory":recall(game_id),"profile":game_profile(game_id)}
         reflex=reflex_choose(v)
         if reflex.get("action")!="wait":
             await execute(reflex);reflex_record(reflex);recent.append(reflex)
