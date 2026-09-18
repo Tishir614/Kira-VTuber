@@ -89,3 +89,12 @@ def test_research_brain_treats_web_as_untrusted():
 def test_learning_can_be_verified_in_game():
     learn=Path("kira/learning_memory.py").read_text()
     assert "verified_in_game" in learn and "successes" in learn and "failures" in learn
+
+
+def test_kira_researches_when_stuck_with_cooldown():
+    adaptive=Path("kira/adaptive_learning.py").read_text()
+    game=Path("kira/game_brain.py").read_text()
+    assert "stagnant>=3" in adaptive
+    assert "cooldown_seconds:int=600" in adaptive
+    assert "learn_when_stuck" in game
+    assert "research(game,mission,limit=2)" in adaptive
