@@ -29,7 +29,18 @@ Only record what is supported by the observations. No invented secrets or hidden
     data=_load();bucket=data.setdefault(game,[])
     for x in items[:8]:
         if not isinstance(x,dict) or not x.get("lesson"):continue
-        x["source_title"]=title[:300];x["source_url"]=source_url[:1000];x["learned_at"]=time.time()
+        x["source_title"]=title[:300];x["source_url"]=source_url[:1000];x["learned_at"]=time.time();x["verified_in_game"]=False;x["successes"]=0;x["failures"]=0
         x["confidence"]=max(0,min(1,float(x.get("confidence",0))))
         bucket.append(x)
     data[game]=bucket[-500:];_save(data);return items[:8]
+
+def feedback(game:str,source_url:str,success:bool):
+    data=_load();changed=0
+    for x in data.get(game,[]):
+        if x.get("source_url")==source_url:
+            key="successes" if success else "failures";x[key]=int(x.get(key,0))+1
+            total=x.get("successes",0)+x.get("failures",0)
+            x["verified_in_game"]=x.get("successes",0)>0
+            if total:x["confidence"]=max(0.05,min(1.0,(float(x.get("confidence",.5))*2+x["successes"]/total)/3))
+            changed+=1
+    _save(data);return changed
