@@ -26,6 +26,8 @@ from .integrations.manager import integrations
 from .integrations.twitch_oauth import twitch_oauth
 from .stream_brain import stream_brain
 from .viewer_memory import viewer_memory
+from .subtitles import subtitles
+from .obs import obs_config
 import asyncio
 
 app = FastAPI(title="Kira VTuber Core", version="0.2.0")
@@ -186,6 +188,12 @@ async def stream_audience(): return {"viewers":audience.snapshot()}
 
 @app.get("/overlay")
 async def overlay(): return FileResponse(WEB / "overlay.html")
+
+@app.get("/subtitles")
+async def subtitle_state(): return subtitles.snapshot()
+
+@app.get("/obs")
+async def obs_state(): return obs_config.load()
 
 @app.get("/overlay/state")
 async def overlay_state(): return stream_snapshot()
