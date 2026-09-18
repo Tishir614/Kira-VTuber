@@ -31,6 +31,8 @@ from .obs import obs_config
 from .voice_catalog import voice_models
 from .autopilot import autopilot
 from .telegram_channel import telegram_status, telegram_post
+from .obs_websocket import obs_ws
+from .showrunner import showrunner
 import asyncio
 
 app = FastAPI(title="Kira VTuber Core", version="0.2.0")
@@ -97,6 +99,10 @@ class StudioSettings(BaseModel):
     telegram_bot_token: str | None = None
     telegram_channel: str | None = None
     autopilot_post_interval_hours: float | None = None
+    obs_ws_url: str | None = None
+    obs_ws_password: str | None = None
+    obs_live_scene: str | None = None
+    autonomous_talk_interval_minutes: float | None = None
 
 @app.get("/")
 async def home(): return FileResponse(WEB / "index.html")
@@ -157,6 +163,24 @@ async def twitch_autostart():
     if not valid: raise HTTPException(401,"Twitch is not connected")
     token,info=valid; integrations.start_twitch(cid,token["access_token"],info["user_id"],info["user_id"]); stream_chat.start()
     return {"ok":True,"user":info.get("login")}
+
+@app.get("/obs/ws/status")
+async def obs_ws_status():
+    try: return {"connected":True,**await obs_ws.stream_status()}
+    except Exception as exc: return {"connected":False,"error":str(exc)}
+
+@app.post("/show/start")
+async def show_start():
+    try: return await showrunner.start()
+    except Exception as exc: raise HTTPException(503,str(exc)) from exc
+
+@app.post("/show/stop")
+async def show_stop():
+    try: return await showrunner.stop()
+    except Exception as exc: raise HTTPException(503,str(exc)) from exc
+
+@app.get("/show")
+async def show_status(): return showrunner.snapshot()
 
 @app.get("/autopilot")
 async def autopilot_state(): return autopilot.snapshot()
@@ -271,6 +295,7 @@ async def patch_settings(req: StudioSettings):
     if "volume" in patch: patch["volume"]=max(0.0,min(1.0,patch["volume"]))
     if "voice_speed" in patch: patch["voice_speed"]=max(0.5,min(2.0,patch["voice_speed"]))
     if "autopilot_post_interval_hours" in patch: patch["autopilot_post_interval_hours"]=max(1.0,min(168.0,patch["autopilot_post_interval_hours"]))
+    if "autonomous_talk_interval_minutes" in patch: patch["autonomous_talk_interval_minutes"]=max(2.0,min(120.0,patch["autonomous_talk_interval_minutes"]))
     if "personality" in patch:
         p=patch["personality"]
         for key in ("warmth","humor","energy","verbosity"):
