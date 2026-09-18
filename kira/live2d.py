@@ -9,6 +9,9 @@ class Live2DState:
     listening: bool = False
     angle_x: float = 0.0
     angle_y: float = 0.0
+    angle_z: float = 0.0
+    eye_x: float = 0.0
+    eye_y: float = 0.0
     body_angle_x: float = 0.0
     breath: float = 0.5
     updated_at: float = 0.0
