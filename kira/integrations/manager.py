@@ -1,6 +1,7 @@
 import asyncio
 from dataclasses import dataclass, asdict
 from .youtube import YouTubeAdapter
+from .twitch import TwitchAdapter
 
 @dataclass
 class IntegrationState:
@@ -9,19 +10,27 @@ class IntegrationState:
     last_error: str=""
 
 class IntegrationManager:
-    def __init__(self): self.state=IntegrationState(); self.tasks={}
+    def __init__(self): self.state=IntegrationState(); self.tasks={}; self.adapters={}
     def snapshot(self): return asdict(self.state)
-    def start_youtube(self,api_key,live_chat_id):
-        if "youtube" in self.tasks and not self.tasks["youtube"].done(): return
-        adapter=YouTubeAdapter(api_key,live_chat_id); self.state.youtube=True
+    def _start(self,name,adapter):
+        t=self.tasks.get(name)
+        if t and not t.done(): return
+        self.adapters[name]=adapter; setattr(self.state,name,True); self.state.last_error=""
         async def runner():
             try: await adapter.run()
-            except Exception as e: self.state.last_error=f"YouTube: {e}"
-            finally: self.state.youtube=False
-        self.tasks["youtube"]=asyncio.create_task(runner())
-    async def stop_youtube(self):
-        t=self.tasks.get("youtube")
-        if t: t.cancel()
-        self.state.youtube=False
+            except asyncio.CancelledError: pass
+            except Exception as e: self.state.last_error=f"{name}: {e}"
+            finally: setattr(self.state,name,False)
+        self.tasks[name]=asyncio.create_task(runner())
+    def start_youtube(self,api_key,live_chat_id): self._start("youtube",YouTubeAdapter(api_key,live_chat_id))
+    def start_twitch(self,client_id,access_token,broadcaster_user_id,bot_user_id): self._start("twitch",TwitchAdapter(client_id,access_token,broadcaster_user_id,bot_user_id))
+    async def stop(self,name):
+        a=self.adapters.get(name)
+        if a:
+            try: await a.stop()
+            except Exception: pass
+        t=self.tasks.get(name)
+        if t and not t.done(): t.cancel()
+        setattr(self.state,name,False)
 
 integrations=IntegrationManager()
