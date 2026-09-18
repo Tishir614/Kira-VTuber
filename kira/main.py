@@ -28,6 +28,7 @@ from .stream_brain import stream_brain
 from .viewer_memory import viewer_memory
 from .subtitles import subtitles
 from .obs import obs_config
+from .voice_catalog import voice_models
 import asyncio
 
 app = FastAPI(title="Kira VTuber Core", version="0.2.0")
@@ -82,6 +83,7 @@ class ModelPullRequest(BaseModel):
 
 class StudioSettings(BaseModel):
     wake_word: str | None = None
+    audio_output: str | None = None
     voice_enabled: bool | None = None
     volume: float | None = None
     personality: dict | None = None
@@ -191,6 +193,9 @@ async def overlay(): return FileResponse(WEB / "overlay.html")
 
 @app.get("/subtitles")
 async def subtitle_state(): return subtitles.snapshot()
+
+@app.get("/voices")
+async def voices(): return voice_models()
 
 @app.get("/obs")
 async def obs_state(): return obs_config.load()
