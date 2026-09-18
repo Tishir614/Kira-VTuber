@@ -9,6 +9,7 @@ from .game_memory import recall, remember
 from .game_reflex import choose as reflex_choose, record as reflex_record
 from .game_profile import get as game_profile, session as profile_session, step as profile_step, death as profile_death, update_world
 from .learning_memory import recall as recall_learned
+from .adaptive_learning import learn_when_stuck
 
 ACTIONS={"move","look","click","wait","done"}
 KEYS={"w","a","s","d","space","shift","ctrl","e","f","r","q","escape","enter","up","down","left","right"}
@@ -55,6 +56,9 @@ async def run(goal:str,steps:int=20,game_id:str="default"):
         sig=signature(v);stagnant=stagnant+1 if sig==previous else 0
         if stagnant>=3:
             remember(game_id,"failure",f"No visible progress after actions: {recent[-3:]}")
+            learned=await learn_when_stuck(game_id,goal,v,stagnant,recent)
+            if learned:
+                mem={"memory":recall(game_id),"profile":game_profile(game_id),"learned_guides":recall_learned(game_id,goal)}
             recent=[];stagnant=0;mem={"memory":recall(game_id),"profile":game_profile(game_id),"learned_guides":recall_learned(game_id,goal)}
         reflex=reflex_choose(v)
         if reflex.get("action")!="wait":
