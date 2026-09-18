@@ -17,6 +17,8 @@ from .diagnostics import diagnostics
 from .setup import setup_status, pull_ollama_model
 from .devices import audio_devices, default_audio
 from .selftest import microphone_test, stt_test, voice_test
+from .model_manager import ollama_models
+from .stream_state import snapshot as stream_snapshot
 import asyncio
 
 app = FastAPI(title="Kira VTuber Core", version="0.2.0")
@@ -47,6 +49,17 @@ class StudioSettings(BaseModel):
 
 @app.get("/")
 async def home(): return FileResponse(WEB / "index.html")
+
+@app.get("/overlay")
+async def overlay(): return FileResponse(WEB / "overlay.html")
+
+@app.get("/overlay/state")
+async def overlay_state(): return stream_snapshot()
+
+@app.get("/models")
+async def models():
+    try: return {"models": await ollama_models(), "active": settings.llm_model}
+    except Exception as exc: raise HTTPException(503,str(exc)) from exc
 
 @app.get("/setup")
 async def setup_page(): return FileResponse(WEB / "setup.html")
