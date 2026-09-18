@@ -98,3 +98,12 @@ def test_kira_researches_when_stuck_with_cooldown():
     assert "cooldown_seconds:int=600" in adaptive
     assert "learn_when_stuck" in game
     assert "research(game,mission,limit=2)" in adaptive
+
+
+def test_experience_engine_reinforces_real_outcomes():
+    exp=Path("kira/experience_engine.py").read_text()
+    game=Path("kira/game_brain.py").read_text()
+    assert 'return "death"' in exp and 'return "progress"' in exp
+    assert "record_experience" in game
+    assert "learning_feedback" in game
+    assert "experience_summary" in game
