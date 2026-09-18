@@ -4,5 +4,5 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent
 #badge{display:inline-flex;align-items:center;gap:10px;background:#100b19cc;border:1px solid #ffffff22;padding:8px 14px;border-radius:999px;font-weight:800}
 #dot{width:10px;height:10px;border-radius:50%;background:#777}#dot.on{background:#fff;box-shadow:0 0 16px #fff}
 #sub{display:inline-block;margin-top:10px;padding:12px 20px;border-radius:18px;background:#09070dcc;font-size:26px;max-width:85%;text-shadow:0 2px 7px #000}
-#emo{opacity:.7;font-weight:500}</style></head><body><div id=hud><div><div id=badge><span id=dot></span>KIRA <span id=emo>neutral</span></div></div><div id=sub></div></div>
+#emo{opacity:.7;font-weight:500}</style></head><body><iframe src="/live2d" style="position:fixed;inset:0;width:100%;height:100%;border:0"></iframe><div id=hud><div><div id=badge><span id=dot></span>KIRA <span id=emo>neutral</span></div></div><div id=sub></div></div>
 <script>async function tick(){try{let [s,a]=await Promise.all([fetch('/subtitles').then(r=>r.json()),fetch('/avatar/state').then(r=>r.json())]);sub.textContent=s.text||'';sub.style.display=s.visible&&s.text?'inline-block':'none';emo.textContent=a.emotion;dot.classList.toggle('on',a.speaking)}catch{}}setInterval(tick,120);tick()</script></body></html>
