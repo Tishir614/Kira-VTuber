@@ -1,0 +1,1 @@
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android"><item><shape><gradient android:angle="45" android:startColor="#08050D" android:centerColor="#261038" android:endColor="#6D1D8E"/></shape></item><item android:gravity="center" android:width="144dp" android:height="144dp" android:drawable="@drawable/ic_kira_fg"/></layer-list>
