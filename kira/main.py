@@ -52,6 +52,7 @@ from .mood import snapshot as mood_snapshot
 from .media_learner import study_url
 from .learning_memory import recall as learned_recall
 from .research_brain import research
+from .adaptive_learning import snapshot as adaptive_learning_status
 import asyncio
 
 app = FastAPI(title="Kira VTuber Core", version="0.2.0")
@@ -349,6 +350,9 @@ async def director_status(): return director.snapshot()
 
 @app.get("/show")
 async def show_status(): return showrunner.snapshot()
+
+@app.get("/learning/adaptive")
+async def learning_adaptive_state(): return adaptive_learning_status()
 
 @app.post("/learning/research")
 async def learning_research(req:ResearchRequest):
