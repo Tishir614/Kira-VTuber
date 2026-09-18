@@ -11,6 +11,8 @@ from .watchdog import watchdog
 from .stream_chat import stream_chat
 from .self_heal import repair
 from .cloud_client import cloud_status
+from .activity_brain import tick as activity_tick, snapshot as activity_status
+from .mood import nudge
 
 @dataclass
 class AutonomyState:
@@ -19,6 +21,7 @@ class AutonomyState:
     last_tick:float=0
     last_error:str=""
     recoveries:int=0
+    last_activity_at:float=0
 
 class Autonomy:
     def __init__(self):self.state=AutonomyState();self.task=None
@@ -41,6 +44,11 @@ class Autonomy:
                 self.state.last_error="; ".join(result.get("unresolved",[]))[:500]
                 # Cloud is optional. Probe it without granting new capabilities.
                 await cloud_status()
+                interval=max(10,float(settings_store.load().get("autonomous_activity_minutes",30)))*60
+                if time.time()-self.state.last_activity_at>=interval:
+                    before=activity_status().get("completed",0);await activity_tick()
+                    if activity_status().get("completed",0)>before:nudge(curiosity=.01,focus=.005)
+                    self.state.last_activity_at=time.time()
             except asyncio.CancelledError:raise
             except Exception as exc:self.state.last_error=str(exc)[:500]
             await asyncio.sleep(60)
