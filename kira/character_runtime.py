@@ -3,6 +3,7 @@ from __future__ import annotations
 import json, os
 from pathlib import Path
 from .live2d_model import profile as live2d_profile
+from .characters import active_id, get as character_get, save_profile
 
 DATA=Path(os.environ.get("KIRA_DATA_DIR","runtime"))
 FILE=DATA/"character-runtime.json"
@@ -12,16 +13,24 @@ DEFAULT={
  "motion":{"speech_energy":0.65,"ear_reactivity":0.55,"tail_reactivity":0.45},
  "plugins":{"allow_avatar_events":True}
 }
+def _merge(a,b):
+ out={k:(v.copy() if isinstance(v,dict) else v) for k,v in a.items()}
+ for k,v in b.items():
+  if isinstance(v,dict) and isinstance(out.get(k),dict):out[k]=_merge(out[k],v)
+  else:out[k]=v
+ return out
 def load():
- try:
-  x=json.loads(FILE.read_text("utf-8"));return {**DEFAULT,**x}
- except Exception:return DEFAULT.copy()
+ cid=active_id();x=character_get(cid)
+ if cid=="kira" and not x.get("voice") and FILE.exists():
+  try:x=_merge(x,json.loads(FILE.read_text("utf-8")))
+  except Exception:pass
+ return _merge(DEFAULT,x)
 def save(patch):
  x=load()
  for k,v in patch.items():
   if isinstance(v,dict) and isinstance(x.get(k),dict):x[k]={**x[k],**v}
   else:x[k]=v
- DATA.mkdir(parents=True,exist_ok=True);FILE.write_text(json.dumps(x,ensure_ascii=False,indent=2),"utf-8");return x
+ save_profile(active_id(),x);return x
 def capabilities():
  p=live2d_profile().get("parameters",{})
  return {k:bool(v) for k,v in p.items()}
