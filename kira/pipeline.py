@@ -23,11 +23,14 @@ async def respond(text: str, speak: bool = True) -> dict:
     subtitles.set(answer)
 
     spoken = False
-    if speak and voice.available and settings.piper_model:
+    active=voice.active()
+    can_speak=voice.available and (active.get("engine")=="kokoro" or active.get("model") or settings.piper_model)
+    if speak and can_speak:
         live2d.set_speaking(True)
         try:
             profile=character_profile(); speed=profile.get("voice",{}).get("speed",1.0)
-            wav = await voice.synthesize(answer, settings.piper_model, speed)
+            engine=active.get("engine") or "piper"; model=active.get("model") or settings.piper_model
+            wav = await voice.synthesize(answer, model, speed, engine=engine, voice_id=active.get("voice_id",""))
             # Temporary amplitude animation until real PCM/RMS lip-sync lands.
             task = asyncio.create_task(drive_from_wav(wav))
             try:
