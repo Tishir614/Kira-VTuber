@@ -207,13 +207,13 @@ async def remove(kind,item_id):
 async def voice_preview(item_id,text="Привет! Я Кира. Так будет звучать мой голос."):
  item=next((x for x in CATALOG["voices"] if x["id"]==item_id),None)
  if not item:raise ValueError("Unknown voice")
- st=installed()
- if item_id not in st.get("voices",[]):await install("voices",item_id)
+ st=installed();engine=item.get("engine","piper")
+ # Preview is intentionally read-only: never install or activate a voice.
+ if engine=="kokoro":
+  if "kokoro" not in st.get("engines",[]):raise RuntimeError("Сначала установите движок Kokoro")
+  from .voice import voice
+  return await voice.synthesize(text,"",1.0,engine="kokoro",voice_id=item_id)
+ if item_id not in st.get("voices",[]):raise RuntimeError("Сначала установите этот голос")
  model=DATA/"voices"/item_id/Path(item["model"]).name
- piper=shutil.which("piper")
- if not piper:raise RuntimeError("Piper is not installed")
- out=Path(tempfile.gettempdir())/("kira-preview-"+item_id+".wav")
- p=await asyncio.create_subprocess_exec(piper,"--model",str(model),"--output_file",str(out),stdin=asyncio.subprocess.PIPE)
- await p.communicate(text.encode("utf-8"))
- if p.returncode:raise RuntimeError("Voice preview failed")
- return out
+ from .voice import voice
+ return await voice.synthesize(text,str(model),1.0,engine="piper",voice_id=item_id)
