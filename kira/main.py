@@ -11,6 +11,7 @@ from .ai_calibration import calibrate_ai
 from .voice_calibration import calibrate as calibrate_voice
 from .voice import voice as calibration_voice
 from .character_runtime import snapshot as character_snapshot, auto_tune as character_auto_tune
+from .characters import list_all as character_list, create as character_create, activate as character_activate, save_profile as character_save_profile
 from .pipeline import respond
 from .live2d import live2d
 from .microphone import record
@@ -89,6 +90,16 @@ async def startup_event():
 
 class TelegramPostRequest(BaseModel):
     text: str
+
+class CharacterCreate(BaseModel):
+    name: str
+
+class CharacterPatch(BaseModel):
+    name: str | None = None
+    voice: dict | None = None
+    ai: dict | None = None
+    motion: dict | None = None
+    plugins: dict | None = None
 
 class ChatRequest(BaseModel):
     message: str
@@ -779,6 +790,22 @@ async def live2d_install(file:UploadFile=File(...)):
     except Exception as exc: raise HTTPException(400,str(exc)) from exc
     finally:
         tmp.unlink(missing_ok=True)
+
+@app.get("/characters")
+async def characters_list(): return character_list()
+
+@app.post("/characters")
+async def characters_create(req:CharacterCreate): return character_create(req.name)
+
+@app.post("/characters/{character_id}/activate")
+async def characters_activate(character_id:str):
+    try:return character_activate(character_id)
+    except ValueError as exc:raise HTTPException(404,str(exc)) from exc
+
+@app.patch("/characters/{character_id}")
+async def characters_patch(character_id:str,req:CharacterPatch):
+    try:return character_save_profile(character_id,{k:v for k,v in req.model_dump().items() if v is not None})
+    except ValueError as exc:raise HTTPException(404,str(exc)) from exc
 
 @app.post("/character/full-calibration")
 async def character_full_calibration():
