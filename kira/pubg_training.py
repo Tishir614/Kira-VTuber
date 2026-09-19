@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio,time
 from dataclasses import dataclass,asdict
 from .vision import analyze_game
+from .pubg_vision import observe as pubg_observe
 from .cloud_client import cloud_post
 from .experience_engine import record as record_experience
 from .learning_memory import recall as recall_learned
@@ -46,12 +47,17 @@ async def training_session(max_steps:int=40):
           except Exception:pass
       for _ in range(max(1,min(max_steps,120))):
         if not state.running or not state.training_confirmed:break
+        pv=await pubg_observe()
+        if pv.get("mode")!="training":
+            state.last_error="Autonomous PUBG controls paused: training mode not visually confirmed";break
         before=await analyze_game("PUBG Mobile TRAINING GROUND only. Practice movement, loot and shooting at training targets.")
         ui=before.get("ui_state","unknown")
-        if ui in {"loading","menu","dialog","unknown"}:action="forward"
-        elif before.get("interactables"):action="interact"
-        elif before.get("threats"):action="shoot"
-        else:action=["forward","left","right","reload"][state.steps%4]
+        if pv.get("reload_needed") or pv.get("ammo_current")==0:action="reload"
+        elif pv.get("crosshair_target") and pv.get("training_targets"):action="shoot"
+        elif pv.get("interact_available") or pv.get("nearby_loot"):action="interact"
+        elif pv.get("movement",{}).get("blocked"):action=["left","right"][state.steps%2]
+        elif ui in {"loading","menu","dialog","unknown"}:action="forward"
+        else:action=["forward","left","right"][state.steps%3]
         await _act(action);await asyncio.sleep(.35)
         after=await analyze_game("Evaluate PUBG training action result.",str(before)[:800])
         record_experience("pubg_mobile_training",{"action":action},before,after,learned)
