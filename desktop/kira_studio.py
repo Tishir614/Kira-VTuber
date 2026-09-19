@@ -27,6 +27,18 @@ def resource_root()->Path:
 
 def acquire_instance_lock():
     lock=data_root()/"kira-studio.lock"
+    if lock.exists():
+        try:
+            pid=int(lock.read_text().strip())
+            if pid>0:
+                if sys.platform.startswith("win"):
+                    import ctypes
+                    h=ctypes.windll.kernel32.OpenProcess(0x1000,False,pid)
+                    if h: ctypes.windll.kernel32.CloseHandle(h); return None
+                else:
+                    os.kill(pid,0); return None
+        except (ValueError,ProcessLookupError,OSError):
+            lock.unlink(missing_ok=True)
     try:
         fd=os.open(str(lock),os.O_CREAT|os.O_EXCL|os.O_WRONLY);os.write(fd,str(os.getpid()).encode())
     except FileExistsError:return None
@@ -50,7 +62,7 @@ def wait_health(port:int, timeout:float=30)->bool:
 
 class Desktop:
     def __init__(self):
-        self.proc=None; self.port=free_port(); self.window=None; self.tray=None
+        self.proc=None; self.port=free_port(); self.window=None; self.tray=None; self.log_handle=None
     def start_core(self):
         env=os.environ.copy(); env["KIRA_HOST"]=HOST; env["KIRA_PORT"]=str(self.port)
         root=resource_root()
@@ -61,7 +73,7 @@ class Desktop:
             cmd=[sys.executable,"--desktop-core",str(self.port)]
         else:
             cmd=[sys.executable,"-m","uvicorn","kira.main:app","--host",HOST,"--port",str(self.port)]
-        self.proc=subprocess.Popen(cmd,cwd=str(root),env=env)
+        log=data/'kira-studio.log'; self.log_handle=open(log,'a',encoding='utf-8'); self.proc=subprocess.Popen(cmd,cwd=str(root),env=env,stdout=self.log_handle,stderr=subprocess.STDOUT)
         return wait_health(self.port)
     def show(self):
         if self.window:
@@ -86,6 +98,9 @@ class Desktop:
             self.proc.terminate()
             try:self.proc.wait(timeout=5)
             except subprocess.TimeoutExpired:self.proc.kill()
+        if self.log_handle:
+            try:self.log_handle.close()
+            except Exception:pass
 
 def run_core_mode(port:int):
     import uvicorn
