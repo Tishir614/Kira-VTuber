@@ -102,3 +102,13 @@ async function runFirstRunChecks(){
  finish.disabled=!required;
 }
 window.addEventListener('load',()=>setTimeout(firstRunWizard,250));
+
+function openInstalledLibrary(){
+ let m=document.getElementById('kiraLibrary');if(!m){m=document.createElement('div');m.id='kiraLibrary';m.className='store-modal';document.body.appendChild(m)}
+ const st=kiraStore.installed||{},groups=[['voices','🎙 Голоса'],['ai','🧠 ИИ-модели'],['plugins','🧩 Плагины']];
+ let body=groups.map(([k,t])=>{const ids=st[k]||[];return '<section class="library-group"><h3>'+t+' <small>'+ids.length+'</small></h3>'+(ids.length?ids.map(id=>{const x=storeItem(k,id)||{id,name:id};const active=k==='voices'?String(st.active_voice||'').includes(id):k==='ai'?st.active_ai===id:false;return '<div class="library-row"><div><b>'+x.name+'</b><small>'+id+'</small></div><span>'+(active?'★ Активен':'✓ Установлен')+'</span><button onclick="openStoreDetail(\''+k+'\',\''+id+'\')">Открыть</button></div>'}).join(''):'<p class="library-empty">Пока ничего не установлено</p>')+'</section>'}).join('');
+ m.innerHTML='<div class="store-detail library-card"><button class="store-close" onclick="closeInstalledLibrary()">✕</button><div class="store-detail-icon">📚</div><h2>Моя библиотека</h2><p>Все локальные компоненты Kira Studio на этом устройстве.</p>'+body+'</div>';m.classList.add('open')
+}
+function closeInstalledLibrary(){document.getElementById('kiraLibrary')?.classList.remove('open')}
+function addLibraryShortcut(){const q=document.querySelector('.app-quick');if(q&&!document.getElementById('libraryShortcut')){const b=document.createElement('button');b.id='libraryShortcut';b.textContent='📚 Библиотека';b.onclick=openInstalledLibrary;q.insertBefore(b,q.lastElementChild)}}
+window.addEventListener('load',()=>setTimeout(addLibraryShortcut,100));
