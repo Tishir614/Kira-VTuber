@@ -148,3 +148,11 @@ def test_pubg_aim_learning_is_training_scoped():
     assert "pull_down" in aim and "hits" in aim and "shots" in aim
     assert "aim_adjust" in training and "recoil_compensate" in training
     assert "training_confirmed" in training
+
+
+def test_pubg_loot_and_weapon_learning():
+    loot=Path("kira/pubg_loot.py").read_text()
+    training=Path("kira/pubg_training.py").read_text()
+    assert "pubg_weapon_knowledge.json" in loot
+    assert "attachments" in loot and "scopes" in loot and "ammo_samples" in loot
+    assert "choose_loot" in training and "learn_loadout" in training
