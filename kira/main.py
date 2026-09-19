@@ -564,7 +564,7 @@ async def catalog():
 @app.post("/catalog/{kind}/{item_id}/install")
 async def catalog_install_item(kind:str,item_id:str):
     if kind not in ("voices","ai","plugins"): raise HTTPException(400,"invalid catalog kind")
-    try:return await catalog_install(kind,item_id)
+    try:return await install_job(kind,item_id)
     except (ValueError,RuntimeError) as exc:raise HTTPException(400,str(exc)) from exc
     except Exception as exc:raise HTTPException(503,str(exc)) from exc
 
