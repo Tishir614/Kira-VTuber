@@ -1,5 +1,5 @@
 import os
-from .catalog import CATALOG, installed as catalog_installed, install as catalog_install, use as catalog_use, remove as catalog_remove, voice_preview, install_job, jobs as catalog_jobs, job as catalog_job, cancel_job as catalog_cancel_job
+from .catalog import CATALOG, installed as catalog_installed, install as catalog_install, use as catalog_use, remove as catalog_remove, voice_preview, install_job, jobs as catalog_jobs, job as catalog_job, cancel_job as catalog_cancel_job, engine_state as catalog_engine_state, install_engine as catalog_install_engine, remove_engine as catalog_remove_engine
 from pathlib import Path
 from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.responses import FileResponse, StreamingResponse
@@ -546,6 +546,19 @@ async def obs_state(): return obs_config.load()
 @app.get("/overlay/state")
 async def overlay_state(): return stream_snapshot()
 
+
+@app.get("/catalog/engines")
+async def catalog_engines(): return {"engines":catalog_engine_state()}
+
+@app.post("/catalog/engines/{engine_id}/install")
+async def catalog_engine_install(engine_id:str):
+    try:return await catalog_install_engine(engine_id)
+    except Exception as exc:raise HTTPException(503,str(exc)) from exc
+
+@app.delete("/catalog/engines/{engine_id}")
+async def catalog_engine_remove(engine_id:str):
+    try:return await catalog_remove_engine(engine_id)
+    except Exception as exc:raise HTTPException(400,str(exc)) from exc
 
 @app.get("/catalog/jobs")
 async def get_catalog_jobs(): return {"jobs":catalog_jobs()}
