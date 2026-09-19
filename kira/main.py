@@ -6,6 +6,7 @@ from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel
 import httpx, uvicorn
 from .config import settings
+from .character_runtime import snapshot as character_snapshot, auto_tune as character_auto_tune
 from .pipeline import respond
 from .live2d import live2d
 from .microphone import record
@@ -782,6 +783,12 @@ async def live2d_install(file:UploadFile=File(...)):
     except Exception as exc: raise HTTPException(400,str(exc)) from exc
     finally:
         tmp.unlink(missing_ok=True)
+
+@app.get("/character/profile")
+async def character_profile_status(): return character_snapshot()
+
+@app.post("/character/auto-tune")
+async def character_profile_autotune(): return character_auto_tune()
 
 @app.get("/avatar/state")
 async def avatar_state(): return live2d.snapshot()
