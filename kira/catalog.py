@@ -7,17 +7,17 @@ from urllib.request import urlopen
 DATA=Path(os.environ.get("KIRA_DATA_DIR","runtime"))
 CATALOG={
  "voices":[
-  {"id":"ru_RU-irina-medium","name":"Ирина","gender":"female","lang":"ru-RU","engine":"piper","model":"https://huggingface.co/rhasspy/piper-voices/resolve/main/ru/ru_RU/irina/medium/ru_RU-irina-medium.onnx","config":"https://huggingface.co/rhasspy/piper-voices/resolve/main/ru/ru_RU/irina/medium/ru_RU-irina-medium.onnx.json"},
+  {"id":"ru_RU-irina-medium","name":"Ирина","gender":"female","lang":"ru-RU","engine":"piper","style":"спокойный, естественный","size_mb":65,"model":"https://huggingface.co/rhasspy/piper-voices/resolve/main/ru/ru_RU/irina/medium/ru_RU-irina-medium.onnx","config":"https://huggingface.co/rhasspy/piper-voices/resolve/main/ru/ru_RU/irina/medium/ru_RU-irina-medium.onnx.json"},
   {"id":"ru_RU-dmitri-medium","name":"Дмитрий","gender":"male","lang":"ru-RU","engine":"piper","model":"https://huggingface.co/rhasspy/piper-voices/resolve/main/ru/ru_RU/dmitri/medium/ru_RU-dmitri-medium.onnx","config":"https://huggingface.co/rhasspy/piper-voices/resolve/main/ru/ru_RU/dmitri/medium/ru_RU-dmitri-medium.onnx.json"}],
  "ai":[
-  {"id":"qwen3:4b","name":"Qwen3 4B","engine":"ollama","note":"Быстрая локальная модель"},
-  {"id":"qwen3:8b","name":"Qwen3 8B","engine":"ollama","note":"Баланс качества и скорости"},
-  {"id":"qwen3:14b","name":"Qwen3 14B","engine":"ollama","note":"Более тяжёлая модель"}],
+  {"id":"qwen3:4b","name":"Qwen3 4B","engine":"ollama","note":"Быстрая локальная модель","ram_gb":6,"quality":"Хорошая","speed":"Быстро"},
+  {"id":"qwen3:8b","name":"Qwen3 8B","engine":"ollama","note":"Баланс качества и скорости","ram_gb":10,"quality":"Выше","speed":"Средне"},
+  {"id":"qwen3:14b","name":"Qwen3 14B","engine":"ollama","note":"Более тяжёлая модель","ram_gb":18,"quality":"Высокая","speed":"Тяжелее"}],
  "plugins":[
-  {"id":"twitch","name":"Twitch","kind":"integration","note":"Чат и события стрима"},
-  {"id":"youtube","name":"YouTube","kind":"integration","note":"Чат и события трансляции"},
-  {"id":"telegram","name":"Telegram","kind":"integration","note":"Канал и сообщения"},
-  {"id":"obs","name":"OBS","kind":"integration","note":"Управление эфиром"}]}
+  {"id":"twitch","name":"Twitch","kind":"integration","note":"Чат и события стрима","category":"Стрим"},
+  {"id":"youtube","name":"YouTube","kind":"integration","note":"Чат и события трансляции","category":"Стрим"},
+  {"id":"telegram","name":"Telegram","kind":"integration","note":"Канал и сообщения","category":"Соцсети"},
+  {"id":"obs","name":"OBS","kind":"integration","note":"Управление эфиром","category":"Стрим"}]}
 def installed():
  p=DATA/"catalog-installed.json"
  try:return json.loads(p.read_text("utf-8"))
