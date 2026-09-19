@@ -57,3 +57,14 @@ document.addEventListener('click',e=>{const card=e.target.closest('.catalogItem'
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeStoreDetail()})
 
 async function cancelStoreJob(id){try{await fetch('/catalog/jobs/'+id+'/cancel',{method:'POST'});const r=await fetch('/catalog/jobs/'+id,{cache:'no-store'});if(r.ok)renderDownloadJob(await r.json())}catch(e){}}
+
+function storePlatformNotice(){
+ const p=typeof kiraPlatform==='function'?kiraPlatform():'Kira Studio';
+ document.querySelectorAll('#voiceCatalog,#aiCatalog,#pluginCatalog').forEach((root,i)=>{
+  if(root.querySelector('.store-platform-note'))return;
+  const n=document.createElement('div');n.className='store-platform-note';
+  n.innerHTML='<b>'+p+'</b><span>'+(p==='Android'?'Компоненты устанавливаются на подключённый Kira Core.':'Компоненты устанавливаются локально в Kira Studio.')+'</span>';
+  root.prepend(n);
+ });
+}
+window.addEventListener('load',storePlatformNotice);
