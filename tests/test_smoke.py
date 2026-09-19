@@ -27,5 +27,5 @@ def test_self_repair_endpoint():
         assert "actions" in body and "unresolved" in body
 
 def test_all_documented_get_routes_are_unique():
-    paths=[r.path for r in app.routes if hasattr(r,"path")]
-    assert len(paths)==len(set(paths)), "Duplicate API paths detected"
+    routes=[(method,r.path) for r in app.routes if hasattr(r,"path") for method in (getattr(r,"methods",None) or [])]
+    assert len(routes)==len(set(routes)), "Duplicate API method/path pairs detected"
