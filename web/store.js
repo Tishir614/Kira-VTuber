@@ -84,3 +84,21 @@ function ensureAppShell(){
 }
 async function refreshAppShell(){const b=document.getElementById('appCore');if(!b)return;try{const r=await fetch('/health',{cache:'no-store'});b.classList.toggle('online',r.ok);b.textContent=r.ok?'● Core онлайн':'● Core ошибка'}catch(e){b.classList.remove('online');b.textContent='● Core офлайн'}}
 window.addEventListener('load',()=>{ensureAppShell();setInterval(refreshAppShell,10000)});
+
+function firstRunWizard(){
+ if(localStorage.getItem('kiraAppSetupV2'))return;
+ const p=kiraPlatform(),m=document.createElement('div');m.id='kiraFirstRun';m.className='store-modal open';
+ m.innerHTML='<div class="store-detail setup-card"><div class="setup-kicker">'+p.icon+' '+p.name+'</div><h2>Добро пожаловать в Kira Studio</h2><p>Быстрая проверка приложения перед первым запуском.</p><div id="setupChecks" class="setup-checks"></div><div class="store-detail-actions"><button id="setupCheck">Проверить систему</button><button id="setupFinish" disabled>Продолжить</button></div></div>';
+ document.body.appendChild(m);
+ document.getElementById('setupCheck').onclick=runFirstRunChecks;
+ document.getElementById('setupFinish').onclick=()=>{localStorage.setItem('kiraAppSetupV2','1');m.remove()};
+}
+async function runFirstRunChecks(){
+ const p=kiraPlatform(),box=document.getElementById('setupChecks'),finish=document.getElementById('setupFinish');box.innerHTML='';finish.disabled=true;
+ const checks=[['Kira Core','/health'],['Store','/catalog'],['Live2D','/live2d/status']];
+ if(p.id!=='android')checks.push(['Диагностика','/diagnostics']);
+ let required=true;
+ for(const [name,url] of checks){const row=document.createElement('div');row.className='setup-row';row.innerHTML='<span>'+name+'</span><b>проверка…</b>';box.appendChild(row);try{const r=await fetch(url,{cache:'no-store'});row.classList.add(r.ok?'ok':'bad');row.querySelector('b').textContent=r.ok?'✓ готово':'✕ ошибка';if(name==='Kira Core'&&!r.ok)required=false}catch(e){row.classList.add('bad');row.querySelector('b').textContent='✕ недоступно';if(name==='Kira Core')required=false}}
+ finish.disabled=!required;
+}
+window.addEventListener('load',()=>setTimeout(firstRunWizard,250));
