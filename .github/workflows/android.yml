@@ -13,7 +13,7 @@ jobs:
       - uses: actions/setup-java@v4
         with: { distribution: temurin, java-version: '17' }
       - uses: gradle/actions/setup-gradle@v4
-      - run: gradle assembleDebug
+      - run: gradle clean assembleDebug lintDebug
       - uses: actions/upload-artifact@v4
         with:
           name: Kira-Studio-Android-debug
