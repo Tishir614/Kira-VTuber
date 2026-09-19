@@ -13,6 +13,7 @@ from .research_brain import research
 from .pubg_aim import adjust as aim_adjust, compensate as recoil_compensate, learn as learn_aim
 from .pubg_loot import observe as learn_loadout, choose_loot
 from .pubg_navigation import observe as nav_observe, choose_direction
+from .pubg_goals import desired_action as goal_action
 
 @dataclass
 class PUBGTrainingState:
@@ -61,7 +62,9 @@ async def training_session(max_steps:int=40):
             state.last_error="Autonomous PUBG controls paused: training mode not visually confirmed";break
         before=await analyze_game("PUBG Mobile TRAINING GROUND only. Practice movement, loot and shooting at training targets.")
         ui=before.get("ui_state","unknown")
-        if pv.get("reload_needed") or pv.get("ammo_current")==0:action="reload"
+        planned=goal_action(pv,state.shots)
+        if planned:action=planned
+        elif pv.get("reload_needed") or pv.get("ammo_current")==0:action="reload"
         elif pv.get("training_targets") and not pv.get("crosshair_target"):
             off=pv.get("target_offset") or {};await aim_adjust(float(off.get("x",0) or 0),float(off.get("y",0) or 0),pv.get("weapon_primary",""));action="aim"
         elif pv.get("crosshair_target") and pv.get("training_targets"):action="shoot"
