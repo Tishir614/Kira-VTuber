@@ -156,3 +156,11 @@ def test_pubg_loot_and_weapon_learning():
     assert "pubg_weapon_knowledge.json" in loot
     assert "attachments" in loot and "scopes" in loot and "ammo_samples" in loot
     assert "choose_loot" in training and "learn_loadout" in training
+
+
+def test_pubg_training_navigation_memory():
+    nav=Path("kira/pubg_navigation.py").read_text()
+    training=Path("kira/pubg_training.py").read_text()
+    assert "pubg_training_map.json" in nav
+    assert '"nodes"' in nav and '"edges"' in nav
+    assert "nav_observe" in training and "choose_direction" in training
