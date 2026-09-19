@@ -40,8 +40,26 @@ def recommend():
   "motion":{"speech_energy":0.78 if expressive>=3 else 0.62,"ear_reactivity":0.72 if furry else 0.0,"tail_reactivity":0.62 if caps.get("tail_x") else 0.0},
   "plugins":{"allow_avatar_events":True}
  }
+def _plugin_recommendations(caps):
+ rec=[]
+ def add(pid,reason,score):rec.append({"id":pid,"reason":reason,"score":score})
+ add("obs","Сцены, субтитры и реакции персонажа во время эфира",98)
+ if caps.get("mouth_open"):add("twitch","Чат и события можно связывать с речью и мимикой",94)
+ if caps.get("ear_l") or caps.get("tail_x"):add("twitch","Подписки, рейды и сообщения могут запускать реакции ушей и хвоста",96)
+ add("youtube","Подходит для автономных эфиров, чата и публикаций",90)
+ return sorted(rec,key=lambda x:x["score"],reverse=True)
+def _ai_calibration(caps):
+ expressive=sum(bool(caps.get(x)) for x in ("mouth_form","brow_l","brow_r","eye_l","eye_r"))
+ motion=sum(bool(caps.get(x)) for x in ("ear_l","ear_r","tail_x","tail_y"))
+ return {
+  "temperature":round(min(.9,.70+expressive*.025+motion*.01),2),
+  "reply_style":"эмоциональный VTuber, естественный, короткие разговорные реплики" if expressive>=3 else "живой, естественный, персонажный",
+  "max_history":24 if expressive>=3 else 18,
+  "reaction_density":round(min(.9,.45+expressive*.06+motion*.04),2),
+  "prefer_short_speech":True
+ }
 def auto_tune():
- r=recommend();save(r);return snapshot()
+ caps=capabilities();r=recommend();r["ai"].update(_ai_calibration(caps));r["plugins"]["recommendations"]=_plugin_recommendations(caps);save(r);return snapshot()
 def plugin_event(kind:str,intensity:float=.5):
  x=load();caps=capabilities()
  if not x.get("plugins",{}).get("allow_avatar_events",True):return {}
@@ -52,4 +70,6 @@ def plugin_event(kind:str,intensity:float=.5):
  if caps.get("brow_l"):out["brow_l"]=intensity*.35
  if caps.get("brow_r"):out["brow_r"]=intensity*.35
  return {"event":kind,"avatar":out}
-def snapshot():return {"profile":load(),"capabilities":capabilities(),"recommended":recommend()}
+def snapshot():
+ caps=capabilities();recommended=recommend();recommended["ai"].update(_ai_calibration(caps));recommended["plugins"]["recommendations"]=_plugin_recommendations(caps)
+ return {"profile":load(),"capabilities":caps,"recommended":recommended,"plugin_recommendations":_plugin_recommendations(caps)}
