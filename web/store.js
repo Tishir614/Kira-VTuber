@@ -112,3 +112,21 @@ function openInstalledLibrary(){
 function closeInstalledLibrary(){document.getElementById('kiraLibrary')?.classList.remove('open')}
 function addLibraryShortcut(){const q=document.querySelector('.app-quick');if(q&&!document.getElementById('libraryShortcut')){const b=document.createElement('button');b.id='libraryShortcut';b.textContent='📚 Библиотека';b.onclick=openInstalledLibrary;q.insertBefore(b,q.lastElementChild)}}
 window.addEventListener('load',()=>setTimeout(addLibraryShortcut,100));
+
+async function loadVoiceEngines(){
+ try{const r=await fetch('/catalog/engines',{cache:'no-store'}),d=await r.json();renderVoiceEngines(d.engines||[])}catch(e){}
+}
+function renderVoiceEngines(items){
+ let host=document.getElementById('voiceEngineCatalog');
+ if(!host){const v=document.getElementById('voiceCatalog');if(!v)return;host=document.createElement('div');host.id='voiceEngineCatalog';host.className='engine-catalog';v.parentNode.insertBefore(host,v)}
+ host.innerHTML='<div class="engine-head"><div><b>⚙️ Движки голосов</b><small>Скачивай только нужные. Удалённые движки остаются в каталоге.</small></div></div><div class="engine-grid">'+items.map(x=>'<article class="engine-card '+(x.installed?'installed':'')+'"><div><b>'+x.name+'</b><small>'+x.description+'</small></div><span>'+(x.installed?'✓ Установлен':'Не установлен')+'</span><button onclick="toggleVoiceEngine(\''+x.id+'\','+(!x.installed)+',this)">'+(x.installed?'Удалить':'Скачать')+'</button></article>').join('')+'</div>';
+}
+async function toggleVoiceEngine(id,install,b){
+ const old=b.textContent;b.disabled=true;b.textContent=install?'Установка…':'Удаление…';
+ try{const r=await fetch('/catalog/engines/'+encodeURIComponent(id)+(install?'/install':''),{method:install?'POST':'DELETE'});if(!r.ok)throw new Error(await r.text());await loadVoiceEngines();await loadCatalog()}
+ catch(e){b.disabled=false;b.textContent=old;alert('Kira Store: '+e.message)}
+}
+function engineForVoice(id){const x=(kiraStore.catalog?.voices||[]).find(v=>v.id===id);return x?.engine||'piper'}
+const _openStoreDetailEngine=typeof openStoreDetail==='function'?openStoreDetail:null;
+if(_openStoreDetailEngine)openStoreDetail=function(kind,id){_openStoreDetailEngine(kind,id);if(kind==='voices'){setTimeout(()=>{const x=(kiraStore.catalog?.voices||[]).find(v=>v.id===id);if(!x)return;const card=document.querySelector('#kiraStoreDetail .store-detail');if(!card)return;const tag=document.createElement('div');tag.className='voice-engine-tag';tag.textContent='⚙️ Движок: '+(x.engine||'piper');const actions=card.querySelector('.store-detail-actions');card.insertBefore(tag,actions||null)},0)}};
+window.addEventListener('load',()=>setTimeout(loadVoiceEngines,350));
