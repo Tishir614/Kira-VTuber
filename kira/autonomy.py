@@ -13,6 +13,7 @@ from .self_heal import repair
 from .cloud_client import cloud_status
 from .activity_brain import tick as activity_tick, snapshot as activity_status
 from .mood import nudge
+from .network_brain import network_brain
 
 @dataclass
 class AutonomyState:
@@ -29,11 +30,11 @@ class Autonomy:
     def start(self):
         self.state.enabled=True;self.state.started_at=time.time()
         settings_store.save({"master_autonomy_enabled":True})
-        watchdog.start();schedule.start();autopilot.start();stream_chat.start()
+        watchdog.start();schedule.start();autopilot.start();stream_chat.start();network_brain.start()
         if not self.task or self.task.done():self.task=asyncio.create_task(self._loop())
     def stop(self):
         self.state.enabled=False;settings_store.save({"master_autonomy_enabled":False})
-        autopilot.stop();schedule.stop();stream_chat.stop();watchdog.stop()
+        autopilot.stop();schedule.stop();stream_chat.stop();watchdog.stop();network_brain.stop()
         if self.task and not self.task.done():self.task.cancel()
     async def _loop(self):
         while self.state.enabled:
