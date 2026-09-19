@@ -122,3 +122,11 @@ def test_network_brain_has_direct_proxy_failover():
     assert '"telegram"' in net and '"twitch"' in net and '"youtube"' in net
     assert 'route.mode="direct"' in net and 'route.mode="proxy"' in net
     assert "network_brain.start()" in autonomy and "network_brain.stop()" in autonomy
+
+
+def test_pubg_autonomy_is_training_only():
+    pubg=Path("kira/pubg_training.py").read_text()
+    assert "training_confirmed" in pubg
+    assert "training/non-competitive mode" in pubg
+    assert "record_experience" in pubg
+    assert "research(" in pubg
