@@ -388,6 +388,9 @@ async def learning_state(game:str,q:str=""): return {"items":learned_recall(game
 @app.get("/pubg/training/goals")
 async def pubg_training_goals(): return pubg_goal_state()
 
+@app.get("/pubg/training/goals")
+async def pubg_training_goal_state(): return pubg_training_goals()
+
 @app.get("/pubg/training/map")
 async def pubg_map(): return pubg_training_map()
 
