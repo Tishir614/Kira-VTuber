@@ -1,5 +1,5 @@
 import os
-from .catalog import CATALOG, installed as catalog_installed, install as catalog_install
+from .catalog import CATALOG, installed as catalog_installed, install as catalog_install, use as catalog_use, remove as catalog_remove, voice_preview
 from pathlib import Path
 from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.responses import FileResponse, StreamingResponse
@@ -556,6 +556,24 @@ async def catalog():
 async def catalog_install_item(kind:str,item_id:str):
     if kind not in ("voices","ai","plugins"): raise HTTPException(400,"invalid catalog kind")
     try:return await catalog_install(kind,item_id)
+    except (ValueError,RuntimeError) as exc:raise HTTPException(400,str(exc)) from exc
+    except Exception as exc:raise HTTPException(503,str(exc)) from exc
+
+
+@app.post("/catalog/{kind}/{item_id}/use")
+async def catalog_use_item(kind:str,item_id:str):
+    try:return await catalog_use(kind,item_id)
+    except ValueError as exc:raise HTTPException(400,str(exc)) from exc
+
+@app.delete("/catalog/{kind}/{item_id}")
+async def catalog_remove_item(kind:str,item_id:str):
+    if kind not in ("voices","ai","plugins"):raise HTTPException(400,"invalid catalog kind")
+    try:return await catalog_remove(kind,item_id)
+    except Exception as exc:raise HTTPException(503,str(exc)) from exc
+
+@app.get("/catalog/voices/{item_id}/preview")
+async def catalog_voice_preview(item_id:str):
+    try:return FileResponse(await voice_preview(item_id),media_type="audio/wav",filename="kira-voice-preview.wav")
     except (ValueError,RuntimeError) as exc:raise HTTPException(400,str(exc)) from exc
     except Exception as exc:raise HTTPException(503,str(exc)) from exc
 
