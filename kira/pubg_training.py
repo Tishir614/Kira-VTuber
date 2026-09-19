@@ -12,6 +12,7 @@ from .learning_memory import recall as recall_learned
 from .research_brain import research
 from .pubg_aim import adjust as aim_adjust, compensate as recoil_compensate, learn as learn_aim
 from .pubg_loot import observe as learn_loadout, choose_loot
+from .pubg_navigation import observe as nav_observe, choose_direction
 
 @dataclass
 class PUBGTrainingState:
@@ -42,6 +43,7 @@ async def _act(action:str):
 async def training_session(max_steps:int=40):
     if not state.training_confirmed:raise PermissionError("Confirm PUBG training/non-competitive mode first")
     state.running=True
+    previous_node=""
     try:
       learned=recall_learned("pubg_mobile","training aim loot recoil")
       if not learned:
@@ -51,6 +53,7 @@ async def training_session(max_steps:int=40):
         if not state.running or not state.training_confirmed:break
         pv=await pubg_observe()
         learn_loadout(pv)
+        node_id=nav_observe(pv,previous_node);previous_node=node_id
         if pv.get("mode")!="training":
             state.last_error="Autonomous PUBG controls paused: training mode not visually confirmed";break
         before=await analyze_game("PUBG Mobile TRAINING GROUND only. Practice movement, loot and shooting at training targets.")
@@ -62,9 +65,9 @@ async def training_session(max_steps:int=40):
         elif pv.get("nearby_loot"):
             wanted=choose_loot(pv);action="interact" if wanted else "forward"
         elif pv.get("interact_available"):action="interact"
-        elif pv.get("movement",{}).get("blocked"):action=["left","right"][state.steps%2]
+        elif pv.get("movement",{}).get("blocked"):action=choose_direction(pv,node_id)
         elif ui in {"loading","menu","dialog","unknown"}:action="forward"
-        else:action=["forward","left","right"][state.steps%3]
+        else:action=choose_direction(pv,node_id)
         if action=="shoot":await recoil_compensate(pv.get("weapon_primary",""))
         if action!="aim":await _act(action)
         await asyncio.sleep(.35)
