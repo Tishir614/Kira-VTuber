@@ -6,6 +6,6 @@
 <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION"/>
 <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE"/>
 <application android:name="ai.kira.studio.KiraApp" android:theme="@style/Theme.KiraStudio" android:label="Kira Studio" android:usesCleartextTraffic="false" android:allowBackup="false" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher_round">
-<activity android:name="ai.kira.studio.MainActivity" android:theme="@style/Theme.KiraStudio" android:screenOrientation="portrait" android:exported="true">
+<activity android:name="ai.kira.studio.MainActivity" android:theme="@style/Theme.KiraStudio.Starting" android:screenOrientation="portrait" android:exported="true">
 <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
 </activity><service android:name="ai.kira.studio.BroadcastService" android:exported="false" android:foregroundServiceType="mediaProjection|microphone"/></application></manifest>
