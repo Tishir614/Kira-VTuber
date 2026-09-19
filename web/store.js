@@ -68,3 +68,19 @@ function storePlatformNotice(){
  });
 }
 window.addEventListener('load',storePlatformNotice);
+
+function kiraPlatform(){
+ if(window.KiraAndroid)return {id:'android',icon:'📱',name:'Android'};
+ const p=(navigator.userAgentData?.platform||navigator.platform||'').toLowerCase();
+ if(p.includes('win'))return {id:'windows',icon:'🪟',name:'Windows'};
+ if(p.includes('linux'))return {id:'linux',icon:'🐧',name:'Linux / Arch'};
+ return {id:'web',icon:'🌐',name:'Web'};
+}
+function ensureAppShell(){
+ if(document.getElementById('kiraAppShell'))return;
+ const p=kiraPlatform(),shell=document.createElement('div');shell.id='kiraAppShell';shell.className='kira-app-shell';
+ shell.innerHTML='<div class="app-platform">'+p.icon+' <b>Kira Studio</b><span>'+p.name+'</span></div><div class="app-quick"><button id="appCore">● Core</button><button onclick="document.getElementById(\'voiceCatalog\')?.scrollIntoView({behavior:\'smooth\'})">🛍 Store</button><button onclick="showDownloadManager()">⬇ Загрузки</button></div>';
+ document.body.prepend(shell);refreshAppShell();
+}
+async function refreshAppShell(){const b=document.getElementById('appCore');if(!b)return;try{const r=await fetch('/health',{cache:'no-store'});b.classList.toggle('online',r.ok);b.textContent=r.ok?'● Core онлайн':'● Core ошибка'}catch(e){b.classList.remove('online');b.textContent='● Core офлайн'}}
+window.addEventListener('load',()=>{ensureAppShell();setInterval(refreshAppShell,10000)});
