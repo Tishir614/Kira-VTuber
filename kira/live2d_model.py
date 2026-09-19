@@ -4,6 +4,45 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parent.parent
 MODEL_DIR=ROOT/"runtime"/"live2d"/"kira"
 MODEL_JSON=MODEL_DIR/"kira.model3.json"
+PROFILE_JSON=MODEL_DIR/"kira.profile.json"
+ALIASES={
+ "mouth_open":["ParamMouthOpenY","MouthOpen","ParamMouthOpen"],
+ "mouth_form":["ParamMouthForm","MouthForm"],
+ "eye_l":["ParamEyeLOpen","EyeLOpen","ParamEyeLeftOpen"],
+ "eye_r":["ParamEyeROpen","EyeROpen","ParamEyeRightOpen"],
+ "eye_x":["ParamEyeBallX","EyeX"],"eye_y":["ParamEyeBallY","EyeY"],
+ "angle_x":["ParamAngleX","AngleX"],"angle_y":["ParamAngleY","AngleY"],"angle_z":["ParamAngleZ","AngleZ"],
+ "body_angle_x":["ParamBodyAngleX","BodyAngleX"],"breath":["ParamBreath","Breath"],
+ "brow_l":["ParamBrowLY","BrowL"],"brow_r":["ParamBrowRY","BrowR"],
+ "ear_l":["ParamEarL","EarL","ParamEarLeft"],"ear_r":["ParamEarR","EarR","ParamEarRight"],
+ "tail_x":["ParamTailX","TailX","ParamTail"],"tail_y":["ParamTailY","TailY"]
+}
+def _parameter_ids(model):
+ ids=set()
+ for g in model.get("Groups",[]): ids.update(str(x) for x in (g.get("Ids") or []))
+ display=model.get("FileReferences",{}).get("DisplayInfo")
+ if display:
+  p=MODEL_DIR/display
+  if p.exists():
+   try:
+    d=json.loads(p.read_text("utf-8"))
+    for x in d.get("Parameters",[]): ids.add(str(x.get("Id","")))
+   except Exception: pass
+ return {x for x in ids if x}
+def build_profile(model):
+ ids=_parameter_ids(model);low={x.lower():x for x in ids};mapping={}
+ for role,names in ALIASES.items():
+  found=next((low[n.lower()] for n in names if n.lower() in low),None)
+  if not found:
+   keys=[k for k in low if all(part in k for part in role.split("_"))]
+   found=low[keys[0]] if keys else None
+  mapping[role]=found
+ profile={"version":1,"parameters":mapping,"detected":sorted(ids),"missing":[k for k,v in mapping.items() if not v]}
+ PROFILE_JSON.write_text(json.dumps(profile,ensure_ascii=False,indent=2),"utf-8")
+ return profile
+def profile():
+ try:return json.loads(PROFILE_JSON.read_text("utf-8"))
+ except Exception:return {"version":1,"parameters":{},"detected":[],"missing":list(ALIASES)}
 
 def status():
     ok=MODEL_JSON.exists()
@@ -15,7 +54,7 @@ def status():
             files=[refs.get("Moc"),*(refs.get("Textures") or []),refs.get("Physics"),refs.get("DisplayInfo")]
             ok=all(not x or (MODEL_DIR/x).exists() for x in files)
         except Exception: ok=False
-    return {"installed":ok,"model":"/live2d/model/kira.model3.json" if ok else None,"directory":str(MODEL_DIR),"files":[x for x in files if x]}
+    return {"installed":ok,"model":"/live2d/model/kira.model3.json" if ok else None,"directory":str(MODEL_DIR),"files":[x for x in files if x],"profile":profile()}
 
 def install_zip(src:Path):
     MODEL_DIR.mkdir(parents=True,exist_ok=True)
@@ -46,5 +85,6 @@ def install_zip(src:Path):
         if g is None:groups.append({"Target":"Parameter","Name":name,"Ids":pid})
         elif not g.get("Ids"):g["Ids"]=pid
     MODEL_JSON.write_text(json.dumps(d,ensure_ascii=False,indent=2),encoding="utf-8")
+    build_profile(d)
     shutil.rmtree(temp,ignore_errors=True)
     return status()
