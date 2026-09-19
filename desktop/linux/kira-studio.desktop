@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Kira Studio
+Comment=Local-first AI VTuber control studio
+Exec=KiraStudio
+Icon=kira-studio
+Terminal=false
+Categories=AudioVideo;Utility;
+StartupNotify=true
