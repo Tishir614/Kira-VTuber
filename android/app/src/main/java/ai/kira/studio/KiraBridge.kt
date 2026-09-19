@@ -10,6 +10,8 @@ class KiraBridge(private val activity:MainActivity){
  @JavascriptInterface fun reload(){activity.runOnUiThread{activity.reloadStudio()}}
  @JavascriptInterface fun broadcastMode()="native-service"
  @JavascriptInterface fun broadcastRunning()=activity.getSharedPreferences("kira",0).getBoolean("broadcast_running",false)
+ @JavascriptInterface fun setStreamTarget(url:String,key:String){activity.getSharedPreferences("kira",0).edit().putString("rtmp_url",url.trim()).putString("rtmp_key",key.trim()).apply()}
+ @JavascriptInterface fun streamTargetConfigured():Boolean{val p=activity.getSharedPreferences("kira",0);return !p.getString("rtmp_url","").isNullOrBlank()&&!p.getString("rtmp_key","").isNullOrBlank()}
  @JavascriptInterface fun startBroadcast(){activity.runOnUiThread{activity.requestBroadcast()}}
  @JavascriptInterface fun stopBroadcast(){activity.runOnUiThread{activity.stopBroadcast()}}
  @JavascriptInterface fun openStreamlabs(){
