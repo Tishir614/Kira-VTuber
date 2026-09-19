@@ -27,6 +27,16 @@ class AvatarController:
             live2d.state.angle_z=math.sin(t*.19)*1.4
             live2d.state.body_angle_x=math.sin(t*.22)*1.8+(math.sin(t*.9)*.7 if speaking else 0)
             live2d.state.breath=(math.sin(t*1.65)+1)/2
+            # Optional furry/character parameters. Models without them simply ignore these values.
+            ear_energy=.16 if speaking else .07
+            live2d.state.ear_l=math.sin(t*1.9)*ear_energy
+            live2d.state.ear_r=math.sin(t*1.9+.65)*ear_energy
+            live2d.state.tail_x=math.sin(t*(1.15 if speaking else .72))*(.32 if speaking else .18)
+            live2d.state.tail_y=math.sin(t*.51)*.08
+            # Keep face values bounded so malformed models cannot receive runaway motion.
+            live2d.state.mouth_open=max(0.0,min(1.0,live2d.state.mouth_open))
+            live2d.state.eye_x=max(-1.0,min(1.0,live2d.state.eye_x))
+            live2d.state.eye_y=max(-1.0,min(1.0,live2d.state.eye_y))
             # Occasional gaze shifts make the avatar less mechanical.
             if t>=self._next_glance:
                 self._glance_x=random.uniform(-.45,.45)
