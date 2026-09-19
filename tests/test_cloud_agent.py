@@ -130,3 +130,12 @@ def test_pubg_autonomy_is_training_only():
     assert "training/non-competitive mode" in pubg
     assert "record_experience" in pubg
     assert "research(" in pubg
+
+
+def test_pubg_vision_requires_training_mode_for_control():
+    vision=Path("kira/pubg_vision.py").read_text()
+    training=Path("kira/pubg_training.py").read_text()
+    for field in ["weapon_primary","ammo_current","nearby_loot","training_targets","minimap"]:
+        assert field in vision
+    assert 'pv.get("mode")!="training"' in training
+    assert "crosshair_target" in training
