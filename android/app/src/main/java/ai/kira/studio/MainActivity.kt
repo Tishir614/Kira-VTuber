@@ -24,7 +24,7 @@ class MainActivity:androidx.activity.ComponentActivity(){
  override fun onCreate(b:Bundle?){
   installSplashScreen()
   super.onCreate(b);setContentView(R.layout.activity_main)
-  web=findViewById(R.id.web);web.setBackgroundColor(Color.rgb(10,7,16));showPreviousCrashIfAny()
+  web=findViewById(R.id.web);web.setBackgroundColor(Color.rgb(10,7,16));if(showPreviousCrashIfAny())return
   if(Build.VERSION.SDK_INT>=33&&checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED)requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),9)
   with(web.settings){javaScriptEnabled=true;domStorageEnabled=true;databaseEnabled=true;cacheMode=WebSettings.LOAD_DEFAULT;mediaPlaybackRequiresUserGesture=false;allowFileAccess=false;allowContentAccess=false;setSupportZoom(false);mixedContentMode=WebSettings.MIXED_CONTENT_NEVER_ALLOW;userAgentString=userAgentString+" KiraStudioAndroid/"+BuildConfig.VERSION_NAME}
   CookieManager.getInstance().setAcceptCookie(true);CookieManager.getInstance().setAcceptThirdPartyCookies(web,true)
@@ -41,7 +41,19 @@ class MainActivity:androidx.activity.ComponentActivity(){
  }
  private fun normalize(raw:String):String{val base=raw.trim().trimEnd('/').removeSuffix("/studio");return "$base/studio"}
  private fun loadStudio(raw:String){web.loadUrl(normalize(raw))}
- private fun showPreviousCrashIfAny(){val f=File(filesDir,"last_crash.txt");if(!f.exists())return;val msg=runCatching{f.readText().take(6000)}.getOrDefault("Не удалось прочитать crash log");f.delete();AlertDialog.Builder(this).setTitle("Kira Studio восстановлена после сбоя").setMessage(msg).setPositiveButton("Продолжить",null).setNeutralButton("Копировать"){_,_->val cm=getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager;cm.setPrimaryClip(android.content.ClipData.newPlainText("Kira crash",msg));toast("Crash log скопирован")}.show()}
+ private fun showPreviousCrashIfAny():Boolean{
+  val f=File(filesDir,"last_crash.txt")
+  val pending=prefs().getBoolean("crash_pending",false)
+  if(!f.exists()&&!pending)return false
+  val msg=runCatching{if(f.exists())f.readText().take(12000) else "Crash marker exists, but report file is missing."}.getOrDefault("Не удалось прочитать crash log")
+  web.visibility=android.view.View.GONE
+  AlertDialog.Builder(this).setTitle("Kira Studio: отчёт о сбое").setMessage(msg).setCancelable(false)
+   .setPositiveButton("Копировать"){_,_->val cm=getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager;cm.setPrimaryClip(android.content.ClipData.newPlainText("Kira crash",msg));toast("Crash report скопирован")}
+   .setNeutralButton("Попробовать снова"){_,_->prefs().edit().putBoolean("crash_pending",false).apply();f.delete();recreate()}
+   .setNegativeButton("Закрыть"){_,_->finish()}.show()
+  return true
+ }
+
  private fun prefs()=getSharedPreferences("kira",0)
  private fun scheduleHealth(){val r=PeriodicWorkRequestBuilder<HealthWorker>(15,TimeUnit.MINUTES).build();WorkManager.getInstance(this).enqueueUniquePeriodicWork("kira-health",ExistingPeriodicWorkPolicy.UPDATE,r)}
  override fun onDestroy(){chooser?.onReceiveValue(null);chooser=null;if(::web.isInitialized){web.stopLoading();web.removeJavascriptInterface("KiraAndroid");web.webChromeClient=null;web.webViewClient=WebViewClient();web.destroy()};super.onDestroy()}
