@@ -385,6 +385,18 @@ async def learning_study(req:StudyRequest):
 @app.get("/learning/{game}")
 async def learning_state(game:str,q:str=""): return {"items":learned_recall(game,q,50)}
 
+@app.get("/pubg/online")
+async def pubg_online_state(): return pubg_online_status()
+
+@app.post("/pubg/online/start")
+async def pubg_online_start(): return set_pubg_online(True)
+
+@app.post("/pubg/online/stop")
+async def pubg_online_stop(): return set_pubg_online(False)
+
+@app.get("/pubg/online/observe")
+async def pubg_online_observe(): return await pubg_online_tick()
+
 @app.get("/pubg/training/goals")
 async def pubg_training_goals(): return pubg_goal_state()
 
