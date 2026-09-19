@@ -93,4 +93,18 @@ window.addEventListener('load',buildCharacterLibrary);
 <style>
 .character-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.character-head h2,.character-head p{margin:0}.character-head p{margin-top:5px;color:#bcaac9}.character-library{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px;margin:14px 0}.character-card{display:grid;grid-template-columns:44px 1fr auto auto;align-items:center;gap:10px;padding:11px;border:1px solid #443052;border-radius:15px;background:#17101f}.character-card.active{border-color:#9561c5;box-shadow:0 0 0 1px #9561c533 inset}.character-avatar{width:42px;height:42px;display:grid;place-items:center;border-radius:13px;background:#281a34;font-size:22px}.character-card div:nth-child(2){display:grid;gap:3px}.character-card small{color:#aa98b7;overflow:hidden;text-overflow:ellipsis}.character-card button{padding:8px 10px}@media(max-width:650px){.character-card{grid-template-columns:42px 1fr auto}.character-card button:last-child{grid-column:3}.character-head{align-items:flex-start}.character-head p{font-size:12px}}
 </style>
+<script>
+function isKiraAndroid(){try{return !!window.KiraAndroid&&KiraAndroid.platform()==='android'}catch(e){return /KiraStudioAndroid/.test(navigator.userAgent)}}
+function adaptStudioForAndroid(){
+ if(!isKiraAndroid())return;
+ document.documentElement.classList.add('kira-android');
+ document.querySelectorAll('.card').forEach(c=>{
+  if(c.textContent.includes('Голос / OBS')){const h=c.querySelector('h2');if(h)h.textContent='🎙️ Голос / Android';const p=c.querySelector('.help');if(p)p.textContent='Голос Киры и мобильный стрим. На Android вместо OBS используется Streamlabs Mobile.'}
+  if(c.textContent.includes('Автономный эфир')){c.querySelectorAll('label,input').forEach(x=>{if((x.textContent||'').includes('OBS')||['obsUrl','obsPass','obsScene'].includes(x.id))x.style.display='none'});const b=c.querySelector('.buttons');if(b){const x=document.createElement('button');x.textContent='📱 Открыть Streamlabs';x.onclick=()=>{try{KiraAndroid.openStreamlabs()}catch(e){location.href='https://streamlabs.com/mobile-app'}};b.prepend(x)}}
+ });
+ document.querySelectorAll('button').forEach(b=>{if((b.textContent||'').includes('OBS Overlay'))b.textContent='📱 Streamlabs Overlay'});
+}
+window.addEventListener('load',adaptStudioForAndroid);
+</script>
+<style>.kira-android body{overscroll-behavior-y:none}.kira-android .desktopHint{display:none!important}@media(max-width:1050px){.kira-android .wrap{padding-top:14px}.kira-android button{touch-action:manipulation}}</style>
 <script src="/store.js"></script></body></html>
