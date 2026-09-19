@@ -16,7 +16,7 @@ def _score(text,caps):
 async def calibrate_ai():
  caps=capabilities();results=[]
  for prompt in SAMPLES:
-  t=time.monotonic();answer=await chat(prompt,[])
+  t=time.monotonic();answer=await chat(prompt)
   score,words,sent=_score(answer,caps)
   results.append({"prompt":prompt,"answer":answer,"score":score,"words":words,"sentences":sent,"latency_ms":round((time.monotonic()-t)*1000)})
  avg=sum(x["score"] for x in results)/len(results);avg_words=sum(x["words"] for x in results)/len(results)
