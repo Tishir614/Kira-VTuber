@@ -1,6 +1,6 @@
 """Kira Studio Desktop launcher for Windows and Linux."""
 from __future__ import annotations
-import os, socket, subprocess, sys, threading, time, shutil
+import os, socket, subprocess, sys, threading, time, shutil, atexit
 from pathlib import Path
 from urllib.request import urlopen
 import webview
@@ -24,6 +24,16 @@ def resource_root()->Path:
     if getattr(sys,"frozen",False):
         return Path(getattr(sys,"_MEIPASS",Path(sys.executable).parent))
     return Path(__file__).resolve().parent.parent
+
+def acquire_instance_lock():
+    lock=data_root()/"kira-studio.lock"
+    try:
+        fd=os.open(str(lock),os.O_CREAT|os.O_EXCL|os.O_WRONLY);os.write(fd,str(os.getpid()).encode())
+    except FileExistsError:return None
+    def cleanup():
+        try:os.close(fd);lock.unlink(missing_ok=True)
+        except Exception:pass
+    atexit.register(cleanup);return cleanup
 
 def free_port()->int:
     with socket.socket() as s:
@@ -84,6 +94,9 @@ def run_core_mode(port:int):
 def main():
     if "--desktop-core" in sys.argv:
         i=sys.argv.index("--desktop-core"); run_core_mode(int(sys.argv[i+1])); return
+    if not acquire_instance_lock():
+        webview.create_window(APP_NAME,"data:text/html,<body style=\'background:%23100b18;color:white;font-family:sans-serif;padding:32px\'><h2>Kira Studio уже запущена</h2><p>Открой окно через системный трей.</p></body>",width=560,height=260)
+        webview.start();return
     app=Desktop()
     if not app.start_core():
         app.stop()
