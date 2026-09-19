@@ -1,6 +1,6 @@
 """Installable catalog for Kira Studio. Installs one selected component at a time."""
 from __future__ import annotations
-import asyncio, json, os, shutil
+import asyncio, json, os, shutil, tempfile
 from pathlib import Path
 from urllib.request import urlopen
 
@@ -46,3 +46,43 @@ async def install(kind,item_id):
  st.setdefault(kind,[])
  if item_id not in st[kind]:st[kind].append(item_id)
  _save(st);return {"ok":True,"installed":st,"item":item}
+
+async def use(kind,item_id):
+ st=installed()
+ if item_id not in st.get(kind,[]):raise ValueError("Item is not installed")
+ if kind=="voices":
+  item=next(x for x in CATALOG["voices"] if x["id"]==item_id);d=DATA/"voices"/item_id
+  st["active_voice"]=str(d/Path(item["model"]).name)
+ elif kind=="ai":st["active_ai"]=item_id
+ elif kind=="plugins":st["active_plugin"]=item_id
+ _save(st);return {"ok":True,"installed":st}
+
+async def remove(kind,item_id):
+ st=installed()
+ if kind=="voices":
+  shutil.rmtree(DATA/"voices"/item_id,ignore_errors=True)
+  if item_id in st.get("voices",[]):st["voices"].remove(item_id)
+  if item_id in st.get("active_voice",""):st["active_voice"]=""
+ elif kind=="ai":
+  ollama=shutil.which("ollama")
+  if ollama:
+   p=await asyncio.create_subprocess_exec(ollama,"rm",item_id);await p.wait()
+  if item_id in st.get("ai",[]):st["ai"].remove(item_id)
+  if st.get("active_ai")==item_id:st["active_ai"]=""
+ elif kind=="plugins":
+  if item_id in st.get("plugins",[]):st["plugins"].remove(item_id)
+ _save(st);return {"ok":True,"installed":st}
+
+async def voice_preview(item_id,text="Привет! Я Кира. Так будет звучать мой голос."):
+ item=next((x for x in CATALOG["voices"] if x["id"]==item_id),None)
+ if not item:raise ValueError("Unknown voice")
+ st=installed()
+ if item_id not in st.get("voices",[]):await install("voices",item_id)
+ model=DATA/"voices"/item_id/Path(item["model"]).name
+ piper=shutil.which("piper")
+ if not piper:raise RuntimeError("Piper is not installed")
+ out=Path(tempfile.gettempdir())/("kira-preview-"+item_id+".wav")
+ p=await asyncio.create_subprocess_exec(piper,"--model",str(model),"--output_file",str(out),stdin=asyncio.subprocess.PIPE)
+ await p.communicate(text.encode("utf-8"))
+ if p.returncode:raise RuntimeError("Voice preview failed")
+ return out
