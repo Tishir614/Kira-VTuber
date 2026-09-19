@@ -130,3 +130,20 @@ function engineForVoice(id){const x=(kiraStore.catalog?.voices||[]).find(v=>v.id
 const _openStoreDetailEngine=typeof openStoreDetail==='function'?openStoreDetail:null;
 if(_openStoreDetailEngine)openStoreDetail=function(kind,id){_openStoreDetailEngine(kind,id);if(kind==='voices'){setTimeout(()=>{const x=(kiraStore.catalog?.voices||[]).find(v=>v.id===id);if(!x)return;const card=document.querySelector('#kiraStoreDetail .store-detail');if(!card)return;const tag=document.createElement('div');tag.className='voice-engine-tag';tag.textContent='⚙️ Движок: '+(x.engine||'piper');const actions=card.querySelector('.store-detail-actions');card.insertBefore(tag,actions||null)},0)}};
 window.addEventListener('load',()=>setTimeout(loadVoiceEngines,350));
+
+
+async function openCharacterOptimizer(){
+ let m=document.getElementById('characterOptimizer');if(!m){m=document.createElement('div');m.id='characterOptimizer';m.className='store-modal';document.body.appendChild(m)}
+ m.innerHTML='<div class="store-detail character-optimizer"><button class="store-close" onclick="closeCharacterOptimizer()">✕</button><div class="store-detail-icon">🦊</div><h2>Оптимизация персонажа</h2><p>ИИ, голос и анимация настраиваются под активную Live2D-модель.</p><div id="characterOptimizerBody">Анализ модели…</div><div class="store-detail-actions"><button onclick="autoTuneCharacter(this)">✨ Автонастройка</button><button onclick="calibrateCharacterVoice(this)">🎙 Калибровать голос</button></div></div>';m.classList.add('open');
+ try{const r=await fetch('/character/profile',{cache:'no-store'}),d=await r.json();renderCharacterOptimizer(d)}catch(e){document.getElementById('characterOptimizerBody').textContent='Не удалось получить профиль: '+e.message}
+}
+function closeCharacterOptimizer(){document.getElementById('characterOptimizer')?.classList.remove('open')}
+function renderCharacterOptimizer(d){
+ const b=document.getElementById('characterOptimizerBody');if(!b)return;const c=d.capabilities||{},p=d.profile||{},v=p.voice||{},ai=p.ai||{},motion=p.motion||{};
+ const parts=Object.entries(c).map(([k,on])=>'<span class="'+(on?'cap-on':'cap-off')+'">'+(on?'✓ ':'✕ ')+k+'</span>').join('');
+ b.innerHTML='<div class="character-caps">'+parts+'</div><div class="character-tune-grid"><div><b>🧠 ИИ</b><small>'+esc(ai.reply_style||'по умолчанию')+'</small><span>Temperature '+Number(ai.temperature??0.75).toFixed(2)+'</span></div><div><b>🎙 Голос</b><small>Скорость '+Number(v.speed??1).toFixed(2)+'×</small><span>Mouth gain '+Number(v.mouth_gain??1).toFixed(2)+'</span></div><div><b>🎭 Анимация</b><small>Уши '+Number(motion.ear_reactivity??0).toFixed(2)+'</small><span>Хвост '+Number(motion.tail_reactivity??0).toFixed(2)+'</span></div></div>';
+}
+async function autoTuneCharacter(b){const old=b.textContent;b.disabled=true;b.textContent='Анализ…';try{const r=await fetch('/character/auto-tune',{method:'POST'});if(!r.ok)throw Error(await r.text());renderCharacterOptimizer(await r.json());b.textContent='✓ Настроено'}catch(e){b.textContent=old;alert(e.message)}finally{setTimeout(()=>b.disabled=false,500)}}
+async function calibrateCharacterVoice(b){const old=b.textContent;b.disabled=true;b.textContent='🎙 Говорю тестовую фразу…';try{const r=await fetch('/character/calibrate-voice',{method:'POST'});if(!r.ok)throw Error(await r.text());const d=await r.json();renderCharacterOptimizer(d);b.textContent='✓ Голос откалиброван'}catch(e){b.textContent=old;alert('Калибровка: '+e.message)}finally{setTimeout(()=>b.disabled=false,500)}}
+function addCharacterOptimizerShortcut(){const q=document.querySelector('.app-quick');if(q&&!document.getElementById('characterOptimizerShortcut')){const b=document.createElement('button');b.id='characterOptimizerShortcut';b.textContent='🦊 Персонаж';b.onclick=openCharacterOptimizer;q.insertBefore(b,q.lastElementChild)}}
+window.addEventListener('load',()=>setTimeout(addCharacterOptimizerShortcut,140));
