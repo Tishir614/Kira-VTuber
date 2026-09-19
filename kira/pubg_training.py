@@ -43,6 +43,7 @@ async def _act(action:str):
 async def training_session(max_steps:int=40):
     if not state.training_confirmed:raise PermissionError("Confirm PUBG training/non-competitive mode first")
     state.running=True
+    nav_node=""
     previous_node=""
     try:
       learned=recall_learned("pubg_mobile","training aim loot recoil")
@@ -53,6 +54,7 @@ async def training_session(max_steps:int=40):
         if not state.running or not state.training_confirmed:break
         pv=await pubg_observe()
         learn_loadout(pv)
+        nav_node=learn_place(pv,nav_node)
         node_id=nav_observe(pv,previous_node);previous_node=node_id
         if pv.get("mode")!="training":
             state.last_error="Autonomous PUBG controls paused: training mode not visually confirmed";break
