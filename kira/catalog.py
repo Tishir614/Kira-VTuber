@@ -1,0 +1,48 @@
+"""Installable catalog for Kira Studio. Installs one selected component at a time."""
+from __future__ import annotations
+import asyncio, json, os, shutil
+from pathlib import Path
+from urllib.request import urlopen
+
+DATA=Path(os.environ.get("KIRA_DATA_DIR","runtime"))
+CATALOG={
+ "voices":[
+  {"id":"ru_RU-irina-medium","name":"Ирина","gender":"female","lang":"ru-RU","engine":"piper","model":"https://huggingface.co/rhasspy/piper-voices/resolve/main/ru/ru_RU/irina/medium/ru_RU-irina-medium.onnx","config":"https://huggingface.co/rhasspy/piper-voices/resolve/main/ru/ru_RU/irina/medium/ru_RU-irina-medium.onnx.json"},
+  {"id":"ru_RU-dmitri-medium","name":"Дмитрий","gender":"male","lang":"ru-RU","engine":"piper","model":"https://huggingface.co/rhasspy/piper-voices/resolve/main/ru/ru_RU/dmitri/medium/ru_RU-dmitri-medium.onnx","config":"https://huggingface.co/rhasspy/piper-voices/resolve/main/ru/ru_RU/dmitri/medium/ru_RU-dmitri-medium.onnx.json"}],
+ "ai":[
+  {"id":"qwen3:4b","name":"Qwen3 4B","engine":"ollama","note":"Быстрая локальная модель"},
+  {"id":"qwen3:8b","name":"Qwen3 8B","engine":"ollama","note":"Баланс качества и скорости"},
+  {"id":"qwen3:14b","name":"Qwen3 14B","engine":"ollama","note":"Более тяжёлая модель"}],
+ "plugins":[
+  {"id":"twitch","name":"Twitch","kind":"integration","note":"Чат и события стрима"},
+  {"id":"youtube","name":"YouTube","kind":"integration","note":"Чат и события трансляции"},
+  {"id":"telegram","name":"Telegram","kind":"integration","note":"Канал и сообщения"},
+  {"id":"obs","name":"OBS","kind":"integration","note":"Управление эфиром"}]}
+def installed():
+ p=DATA/"catalog-installed.json"
+ try:return json.loads(p.read_text("utf-8"))
+ except Exception:return {"voices":[],"ai":[],"plugins":[],"active_voice":"","active_ai":""}
+def _save(x):
+ DATA.mkdir(parents=True,exist_ok=True);(DATA/"catalog-installed.json").write_text(json.dumps(x,ensure_ascii=False,indent=2),"utf-8")
+async def install(kind,item_id):
+ item=next((x for x in CATALOG.get(kind,[]) if x["id"]==item_id),None)
+ if not item:raise ValueError("Unknown catalog item")
+ st=installed()
+ if kind=="voices":
+  d=DATA/"voices"/item_id;d.mkdir(parents=True,exist_ok=True)
+  for key in ("model","config"):
+   target=d/Path(item[key]).name
+   await asyncio.to_thread(lambda u=item[key],p=target: p.write_bytes(urlopen(u,timeout=60).read()))
+  st["active_voice"]=str(d/Path(item["model"]).name)
+ elif kind=="ai":
+  ollama=shutil.which("ollama")
+  if not ollama:raise RuntimeError("Ollama is not installed")
+  p=await asyncio.create_subprocess_exec(ollama,"pull",item_id)
+  if await p.wait():raise RuntimeError("Ollama pull failed")
+  st["active_ai"]=item_id
+ elif kind=="plugins":
+  # Integrations ship with Kira Core. Installing enables only the selected adapter.
+  st.setdefault("plugins",[])
+ st.setdefault(kind,[])
+ if item_id not in st[kind]:st[kind].append(item_id)
+ _save(st);return {"ok":True,"installed":st,"item":item}
