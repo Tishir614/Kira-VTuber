@@ -56,6 +56,7 @@ from .adaptive_learning import snapshot as adaptive_learning_status
 from .experience_engine import summary as game_experience_summary
 from .proxy import status as proxy_status
 from .network_brain import network_brain
+from .pubg_training import snapshot as pubg_status, confirm_training, training_session, stop as stop_pubg
 import asyncio
 
 app = FastAPI(title="Kira VTuber Core", version="0.2.0")
@@ -143,6 +144,12 @@ class CloudGameRequest(BaseModel):
 class CloudGoalRequest(BaseModel):
     goal: str
     max_steps: int = 12
+
+class PUBGTrainingRequest(BaseModel):
+    max_steps: int = 40
+
+class PUBGConfirmRequest(BaseModel):
+    training: bool
 
 class ResearchRequest(BaseModel):
     game: str
@@ -372,6 +379,18 @@ async def learning_study(req:StudyRequest):
 
 @app.get("/learning/{game}")
 async def learning_state(game:str,q:str=""): return {"items":learned_recall(game,q,50)}
+
+@app.get("/pubg/training")
+async def pubg_training_state(): return pubg_status()
+
+@app.post("/pubg/training/confirm")
+async def pubg_training_confirm(req:PUBGConfirmRequest): return confirm_training(req.training)
+
+@app.post("/pubg/training/start")
+async def pubg_training_start(req:PUBGTrainingRequest): return await training_session(req.max_steps)
+
+@app.post("/pubg/training/stop")
+async def pubg_training_stop(): stop_pubg();return pubg_status()
 
 @app.get("/network")
 async def kira_network(): return network_brain.snapshot()
