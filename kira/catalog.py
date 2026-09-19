@@ -25,16 +25,31 @@ async def install_job(kind,item_id):
 CATALOG={
  "voices":[
   {"id":"ru_RU-irina-medium","name":"Ирина","gender":"female","lang":"ru-RU","engine":"piper","style":"спокойный, естественный","size_mb":65,"model":"https://huggingface.co/rhasspy/piper-voices/resolve/main/ru/ru_RU/irina/medium/ru_RU-irina-medium.onnx","config":"https://huggingface.co/rhasspy/piper-voices/resolve/main/ru/ru_RU/irina/medium/ru_RU-irina-medium.onnx.json"},
-  {"id":"ru_RU-dmitri-medium","name":"Дмитрий","gender":"male","lang":"ru-RU","engine":"piper","model":"https://huggingface.co/rhasspy/piper-voices/resolve/main/ru/ru_RU/dmitri/medium/ru_RU-dmitri-medium.onnx","config":"https://huggingface.co/rhasspy/piper-voices/resolve/main/ru/ru_RU/dmitri/medium/ru_RU-dmitri-medium.onnx.json"}],
+  {"id":"ru_RU-dmitri-medium","name":"Дмитрий","gender":"male","lang":"ru-RU","engine":"piper","model":"https://huggingface.co/rhasspy/piper-voices/resolve/main/ru/ru_RU/dmitri/medium/ru_RU-dmitri-medium.onnx","config":"https://huggingface.co/rhasspy/piper-voices/resolve/main/ru/ru_RU/dmitri/medium/ru_RU-dmitri-medium.onnx.json"},
+  {"id":"ru_RU-denis-medium","name":"Денис","gender":"male","lang":"ru-RU","engine":"piper","size_mb":64,"model":"https://huggingface.co/rhasspy/piper-voices/resolve/main/ru/ru_RU/denis/medium/ru_RU-denis-medium.onnx","config":"https://huggingface.co/rhasspy/piper-voices/resolve/main/ru/ru_RU/denis/medium/ru_RU-denis-medium.onnx.json"},
+  {"id":"ru_RU-ruslan-medium","name":"Руслан","gender":"male","lang":"ru-RU","engine":"piper","size_mb":64,"model":"https://huggingface.co/rhasspy/piper-voices/resolve/main/ru/ru_RU/ruslan/medium/ru_RU-ruslan-medium.onnx","config":"https://huggingface.co/rhasspy/piper-voices/resolve/main/ru/ru_RU/ruslan/medium/ru_RU-ruslan-medium.onnx.json"}],
  "ai":[
   {"id":"qwen3:4b","name":"Qwen3 4B","engine":"ollama","note":"Быстрая локальная модель","ram_gb":6,"quality":"Хорошая","speed":"Быстро"},
   {"id":"qwen3:8b","name":"Qwen3 8B","engine":"ollama","note":"Баланс качества и скорости","ram_gb":10,"quality":"Выше","speed":"Средне"},
-  {"id":"qwen3:14b","name":"Qwen3 14B","engine":"ollama","note":"Более тяжёлая модель","ram_gb":18,"quality":"Высокая","speed":"Тяжелее"}],
+  {"id":"qwen3:14b","name":"Qwen3 14B","engine":"ollama","note":"Более тяжёлая модель","ram_gb":18,"quality":"Высокая","speed":"Тяжелее"},
+  {"id":"llama3.2:1b","name":"Llama 3.2 1B","engine":"ollama","note":"Очень лёгкая модель для слабых устройств","quality":"Базовая","speed":"Очень быстро"},
+  {"id":"llama3.2:3b","name":"Llama 3.2 3B","engine":"ollama","note":"Компактная мультиязычная модель","quality":"Хорошая","speed":"Быстро"},
+  {"id":"gemma3:1b","name":"Gemma 3 1B","engine":"ollama","note":"Лёгкая модель Google","quality":"Базовая","speed":"Очень быстро"},
+  {"id":"gemma3:4b","name":"Gemma 3 4B","engine":"ollama","note":"Мультимодальная модель с поддержкой изображений","quality":"Хорошая","speed":"Быстро"},
+  {"id":"qwen3.5:4b","name":"Qwen 3.5 4B","engine":"ollama","note":"Новая компактная мультимодальная модель","quality":"Хорошая","speed":"Быстро"},
+  {"id":"qwen3-coder:30b","name":"Qwen3 Coder 30B","engine":"ollama","note":"Модель для кода и агентных задач","quality":"Высокая","speed":"Тяжелее"},
+  {"id":"mistral-small3.2","name":"Mistral Small 3.2","engine":"ollama","note":"24B, инструменты и изображения","quality":"Высокая","speed":"Тяжелее"}],
  "plugins":[
   {"id":"twitch","name":"Twitch","kind":"integration","note":"Чат и события стрима","category":"Стрим"},
   {"id":"youtube","name":"YouTube","kind":"integration","note":"Чат и события трансляции","category":"Стрим"},
   {"id":"telegram","name":"Telegram","kind":"integration","note":"Канал и сообщения","category":"Соцсети"},
-  {"id":"obs","name":"OBS","kind":"integration","note":"Управление эфиром","category":"Стрим"}]}
+  {"id":"obs","name":"OBS","kind":"integration","note":"Управление эфиром","category":"Стрим"},
+  {"id":"discord","name":"Discord","kind":"integration","note":"Чаты, события и сообщества","category":"Соцсети"},
+  {"id":"web-search","name":"Web Search","kind":"integration","note":"Поиск актуальной информации в интернете","category":"Инструменты"},
+  {"id":"memory","name":"Kira Memory","kind":"builtin","note":"Долговременная локальная память","category":"ИИ"},
+  {"id":"vision","name":"Kira Vision","kind":"builtin","note":"Анализ изображений и экрана","category":"ИИ"},
+  {"id":"stt","name":"Speech to Text","kind":"builtin","note":"Локальное распознавание речи","category":"Голос"},
+  {"id":"live2d","name":"Live2D","kind":"builtin","note":"Управление аватаром Kira","category":"Аватар"}]}
 def installed():
  p=DATA/"catalog-installed.json"
  try:return json.loads(p.read_text("utf-8"))
