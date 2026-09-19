@@ -20,8 +20,8 @@ def proxy_for(service:str)->str|None:
     if not c["enabled"] or service not in c["services"] or not _valid(c["url"]):return None
     return c["url"]
 
-def client(service:str,timeout=20,**kwargs):
-    p=proxy_for(service)
+def client(service:str,timeout=20,force:bool=False,**kwargs):
+    p=proxy_for(service) if not force else config().get("url")
     if p:kwargs["proxy"]=p
     return httpx.AsyncClient(timeout=timeout,**kwargs)
 
@@ -36,3 +36,10 @@ async def status():
                 r=await h.get("https://example.com");result["reachable"]=r.status_code<500
         except Exception as exc:result["reachable"]=False;result["error"]=str(exc)[:200]
     return result
+
+def routed_client(service:str,timeout=20,**kwargs):
+    try:
+        from .network_brain import network_brain
+        use_proxy=network_brain.state.routes.get(service) and network_brain.state.routes[service].mode=="proxy"
+    except Exception:use_proxy=False
+    return client(service,timeout,force=bool(use_proxy),**kwargs)
