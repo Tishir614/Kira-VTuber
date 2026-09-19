@@ -8,3 +8,17 @@ function previewVoice(id){new Audio('/catalog/voices/'+encodeURIComponent(id)+'/
 async function useCatalog(kind,id){const r=await fetch('/catalog/'+kind+'/'+encodeURIComponent(id)+'/use',{method:'POST'});if(r.ok)loadCatalog()}
 async function removeCatalog(kind,id){if(!confirm('Удалить '+id+'?'))return;const r=await fetch('/catalog/'+kind+'/'+encodeURIComponent(id),{method:'DELETE'});if(r.ok)loadCatalog()}
 window.addEventListener('load',loadCatalog);
+
+function enhanceKiraStore(){
+ [['voiceCatalog','voices','voiceCatalogList','голосов'],['aiCatalog','ai','aiCatalogList','моделей'],['pluginCatalog','plugins','pluginCatalogList','плагинов']].forEach(d=>{
+  const root=document.getElementById(d[0]);if(!root||root.querySelector('.kira-store-toolbar'))return;
+  const bar=document.createElement('div');bar.className='kira-store-toolbar';
+  const all=document.createElement('button'),mine=document.createElement('button'),search=document.createElement('input'),count=document.createElement('span');
+  all.textContent='Все';all.className='active';mine.textContent='Установленные';search.placeholder='🔎 Поиск…';count.className='store-count';
+  const apply=mode=>{const q=search.value.trim().toLowerCase(),st=kiraStore.installed||{};document.querySelectorAll('#'+d[2]+' .catalogItem').forEach(c=>{const id=c.getAttribute('data-id')||'',okMode=mode==='all'||(st[d[1]]||[]).includes(id),okSearch=!q||c.innerText.toLowerCase().includes(q);c.style.display=okMode&&okSearch?'':'none'});all.classList.toggle('active',mode==='all');mine.classList.toggle('active',mode==='installed')};
+  all.onclick=()=>apply('all');mine.onclick=()=>apply('installed');search.oninput=()=>apply(all.classList.contains('active')?'all':'installed');count.textContent=((kiraStore.installed||{})[d[1]]||[]).length+' '+d[3]+' установлено';
+  bar.append(all,mine,search,count);root.insertBefore(bar,document.getElementById(d[2]));
+ });
+}
+const kiraStoreLoadBase=loadCatalog;
+loadCatalog=async function(){await kiraStoreLoadBase();document.querySelectorAll('.kira-store-toolbar').forEach(x=>x.remove());document.querySelectorAll('.catalogItem').forEach(c=>{const title=c.querySelector('h3');if(title){const groups=kiraStore.catalog||{};for(const kind of ['voices','ai','plugins']){const item=(groups[kind]||[]).find(i=>i.name===title.textContent);if(item){c.setAttribute('data-id',item.id);break}}}});enhanceKiraStore()}
