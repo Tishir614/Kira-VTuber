@@ -10,6 +10,7 @@ from .settings_store import settings_store
 from .stream_state import state as stream_state
 from .subtitles import subtitles
 from .lipsync import drive_from_wav
+from .character_runtime import load as character_profile
 
 async def respond(text: str, speak: bool = True) -> dict:
     history = memory.history()
@@ -25,7 +26,8 @@ async def respond(text: str, speak: bool = True) -> dict:
     if speak and voice.available and settings.piper_model:
         live2d.set_speaking(True)
         try:
-            wav = await voice.synthesize(answer, settings.piper_model)
+            profile=character_profile(); speed=profile.get("voice",{}).get("speed",1.0)
+            wav = await voice.synthesize(answer, settings.piper_model, speed)
             # Temporary amplitude animation until real PCM/RMS lip-sync lands.
             task = asyncio.create_task(drive_from_wav(wav))
             try:
