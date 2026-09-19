@@ -1,12 +1,19 @@
 """Kira Studio Desktop launcher for Windows and Linux."""
 from __future__ import annotations
-import os, socket, subprocess, sys, threading, time
+import os, socket, subprocess, sys, threading, time, shutil
 from pathlib import Path
 from urllib.request import urlopen
 import webview
 
 APP_NAME="Kira Studio"
 HOST="127.0.0.1"
+
+def data_root()->Path:
+    if sys.platform.startswith("win"):
+        base=Path(os.environ.get("LOCALAPPDATA",Path.home()/"AppData"/"Local"))
+    else:
+        base=Path(os.environ.get("XDG_DATA_HOME",Path.home()/".local"/"share"))
+    p=base/"KiraStudio";p.mkdir(parents=True,exist_ok=True);return p
 
 def resource_root()->Path:
     if getattr(sys,"frozen",False):
@@ -32,6 +39,9 @@ class Desktop:
     def start_core(self):
         env=os.environ.copy(); env["KIRA_HOST"]=HOST; env["KIRA_PORT"]=str(self.port)
         root=resource_root()
+        data=data_root();env["KIRA_DATA_DIR"]=str(data);env["KIRA_DESKTOP_PORT"]=str(self.port)
+        # Keep writable runtime/settings outside the PyInstaller bundle.
+        os.chdir(data)
         if getattr(sys,"frozen",False):
             cmd=[sys.executable,"--desktop-core",str(self.port)]
         else:
