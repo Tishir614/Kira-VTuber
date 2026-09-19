@@ -409,16 +409,7 @@ async def pubg_online_stop(): return set_pubg_online(False)
 async def pubg_online_observe(): return await pubg_online_tick()
 
 @app.get("/pubg/training/goals")
-async def pubg_training_goals(): return pubg_goal_state()
-
-@app.get("/pubg/training/goals")
-async def pubg_training_goal_state(): return pubg_training_goals()
-
-@app.get("/pubg/training/map")
-async def pubg_map(): return pubg_training_map()
-
-@app.get("/pubg/training/map")
-async def pubg_map(): return pubg_training_map()
+async def pubg_training_goal_state(): return pubg_goal_state()
 
 @app.get("/pubg/training/map")
 async def pubg_training_map_state(): return pubg_training_map()
