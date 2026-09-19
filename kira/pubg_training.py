@@ -64,6 +64,8 @@ async def training_session(max_steps:int=40):
         ui=before.get("ui_state","unknown")
         planned=goal_action(pv,state.shots)
         if planned:action=planned
+        elgoal=goal_action(pv,state.shots)
+        if goal:action=goal
         elif pv.get("reload_needed") or pv.get("ammo_current")==0:action="reload"
         elif pv.get("training_targets") and not pv.get("crosshair_target"):
             off=pv.get("target_offset") or {};await aim_adjust(float(off.get("x",0) or 0),float(off.get("y",0) or 0),pv.get("weapon_primary",""));action="aim"
@@ -83,6 +85,7 @@ async def training_session(max_steps:int=40):
                 pv2=await pubg_observe();fb=pv2.get("shot_feedback") or {};learn_aim(pv.get("weapon_primary",""),bool(fb.get("hit")),float(fb.get("vertical_drift",0) or 0))
             except Exception:pass
         record_experience("pubg_mobile_training",{"action":action},before,after,learned)
+        update_goal(pv,state.shots)
         state.steps+=1;state.last_action=action
       return asdict(state)
     except Exception as exc:state.last_error=str(exc)[:400];raise
