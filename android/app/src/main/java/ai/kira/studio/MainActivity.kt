@@ -8,6 +8,8 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.webkit.*
 import android.widget.EditText
+import android.widget.Toast
+import java.io.File
 import androidx.activity.OnBackPressedCallback
 import androidx.work.*
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
@@ -17,15 +19,16 @@ class MainActivity:androidx.activity.ComponentActivity(){
  private lateinit var web:WebView
  private var chooser:ValueCallback<Array<Uri>>?=null
  private val pick=registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.GetContent()){u->chooser?.onReceiveValue(if(u==null)null else arrayOf(u));chooser=null}
- override fun onCreate(b:Bundle?){installSplashScreen();super.onCreate(b);setContentView(R.layout.activity_main);web=findViewById(R.id.web);web.setBackgroundColor(Color.rgb(10,7,16))
+ override fun onCreate(b:Bundle?){installSplashScreen();super.onCreate(b);setContentView(R.layout.activity_main);web=findViewById(R.id.web);web.setBackgroundColor(Color.rgb(10,7,16));showPreviousCrashIfAny()
   if(Build.VERSION.SDK_INT>=33&&checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED)requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),9)
   web.settings.javaScriptEnabled=true;web.settings.domStorageEnabled=true;web.settings.mediaPlaybackRequiresUserGesture=false;web.settings.allowFileAccess=false;web.settings.allowContentAccess=false;web.settings.setSupportZoom(false);web.settings.mixedContentMode=WebSettings.MIXED_CONTENT_NEVER_ALLOW;web.addJavascriptInterface(KiraBridge(this),"KiraAndroid")
   web.webChromeClient=object:WebChromeClient(){override fun onShowFileChooser(v:WebView?,cb:ValueCallback<Array<Uri>>,p:FileChooserParams?):Boolean{chooser?.onReceiveValue(null);chooser=cb;pick.launch("application/zip");return true}}
-  web.webViewClient=object:WebViewClient(){override fun shouldOverrideUrlLoading(v:WebView,r:WebResourceRequest):Boolean{val u=r.url;val h=u.host?:"";if(h.contains("google.com")||h.contains("twitch.tv")){startActivity(Intent(Intent.ACTION_VIEW,u));return true};return false}}
+  web.webViewClient=object:WebViewClient(){override fun shouldOverrideUrlLoading(v:WebView,r:WebResourceRequest):Boolean{val u=r.url;val h=u.host?:"";if(h.endsWith("google.com")||h.endsWith("twitch.tv")){runCatching{startActivity(Intent(Intent.ACTION_VIEW,u))};return true};return false};override fun onReceivedError(v:WebView,r:WebResourceRequest,e:WebResourceError){if(r.isForMainFrame)toast("Kira Core недоступен: "+e.description)}}
   val saved=prefs().getString("url","")?:"";if(saved.isBlank())askUrl()else{web.loadUrl(saved);scheduleHealth()}
   web.setDownloadListener{url,_,_,_,_->runCatching{startActivity(Intent(Intent.ACTION_VIEW,Uri.parse(url)))}}
   onBackPressedDispatcher.addCallback(this,object:OnBackPressedCallback(true){override fun handleOnBackPressed(){if(web.canGoBack())web.goBack()else finish()}})
  }
+ private fun showPreviousCrashIfAny(){val f=File(filesDir,"last_crash.txt");if(!f.exists())return;val msg=runCatching{f.readText().take(6000)}.getOrDefault("Не удалось прочитать crash log");f.delete();AlertDialog.Builder(this).setTitle("Kira Studio восстановлена после сбоя").setMessage(msg).setPositiveButton("Продолжить",null).setNeutralButton("Копировать"){_,_->val cm=getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager;cm.setPrimaryClip(android.content.ClipData.newPlainText("Kira crash",msg));toast("Crash log скопирован")}.show()}
  private fun prefs()=getSharedPreferences("kira",0)
  private fun scheduleHealth(){val r=PeriodicWorkRequestBuilder<HealthWorker>(15,TimeUnit.MINUTES).build();WorkManager.getInstance(this).enqueueUniquePeriodicWork("kira-health",ExistingPeriodicWorkPolicy.UPDATE,r)}
  fun reloadStudio(){web.reload()}
