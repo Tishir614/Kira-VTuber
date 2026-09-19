@@ -4,6 +4,8 @@ import android.graphics.Color
 import android.os.*
 import android.content.*
 import android.content.pm.PackageManager
+import android.media.projection.MediaProjectionManager
+import android.app.Activity
 import android.net.Uri
 import android.webkit.*
 import android.widget.EditText
@@ -16,6 +18,7 @@ import java.util.concurrent.TimeUnit
 class MainActivity:androidx.activity.ComponentActivity(){
  private lateinit var web:WebView
  private var chooser:ValueCallback<Array<Uri>>?=null
+ private val capture=registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()){r->if(r.resultCode==Activity.RESULT_OK&&r.data!=null){val i=Intent(this,BroadcastService::class.java).setAction(BroadcastService.START).putExtra(BroadcastService.EXTRA_RESULT_CODE,r.resultCode).putExtra(BroadcastService.EXTRA_DATA,r.data);androidx.core.content.ContextCompat.startForegroundService(this,i)}else toast("Захват экрана отменён")}
  private val pick=registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.OpenDocument()){u->chooser?.onReceiveValue(if(u==null)null else arrayOf(u));chooser=null}
  override fun onCreate(b:Bundle?){
   installSplashScreen();super.onCreate(b);setContentView(R.layout.activity_main)
@@ -41,6 +44,8 @@ class MainActivity:androidx.activity.ComponentActivity(){
  private fun scheduleHealth(){val r=PeriodicWorkRequestBuilder<HealthWorker>(15,TimeUnit.MINUTES).build();WorkManager.getInstance(this).enqueueUniquePeriodicWork("kira-health",ExistingPeriodicWorkPolicy.UPDATE,r)}
  override fun onDestroy(){chooser?.onReceiveValue(null);chooser=null;if(::web.isInitialized){web.stopLoading();web.removeJavascriptInterface("KiraAndroid");web.webChromeClient=null;web.webViewClient=WebViewClient();web.destroy()};super.onDestroy()}
  fun reloadStudio(){loadStudio(prefs().getString("url","")?:"")}
+ fun requestBroadcast(){val m=getSystemService(MediaProjectionManager::class.java);capture.launch(m.createScreenCaptureIntent())}
+ fun stopBroadcast(){startService(Intent(this,BroadcastService::class.java).setAction(BroadcastService.STOP))}
  fun openServerDialog(){askUrl()}
  private fun askUrl(){
   val view=layoutInflater.inflate(R.layout.dialog_server,null);val input=view.findViewById<EditText>(R.id.serverUrl)
