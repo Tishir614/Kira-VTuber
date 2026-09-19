@@ -8,7 +8,10 @@ class KiraBridge(private val activity:MainActivity){
  @JavascriptInterface fun platform()="android"
  @JavascriptInterface fun changeServer(){activity.runOnUiThread{activity.openServerDialog()}}
  @JavascriptInterface fun reload(){activity.runOnUiThread{activity.reloadStudio()}}
- @JavascriptInterface fun broadcastMode()="native-pending"
+ @JavascriptInterface fun broadcastMode()="native-service"
+ @JavascriptInterface fun broadcastRunning()=activity.getSharedPreferences("kira",0).getBoolean("broadcast_running",false)
+ @JavascriptInterface fun startBroadcast(){activity.runOnUiThread{androidx.core.content.ContextCompat.startForegroundService(activity,Intent(activity,BroadcastService::class.java).setAction(BroadcastService.START))}}
+ @JavascriptInterface fun stopBroadcast(){activity.runOnUiThread{activity.startService(Intent(activity,BroadcastService::class.java).setAction(BroadcastService.STOP))}}
  @JavascriptInterface fun openStreamlabs(){
   activity.runOnUiThread{
    val pm=activity.packageManager
