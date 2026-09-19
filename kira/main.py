@@ -61,6 +61,7 @@ from .pubg_vision import observe as pubg_observe
 from .pubg_aim import all_profiles as pubg_aim_profiles
 from .pubg_loot import knowledge as pubg_weapon_knowledge
 from .pubg_navigation import map_state as pubg_training_map
+from .pubg_goals import state as pubg_goal_state
 import asyncio
 
 app = FastAPI(title="Kira VTuber Core", version="0.2.0")
@@ -383,6 +384,9 @@ async def learning_study(req:StudyRequest):
 
 @app.get("/learning/{game}")
 async def learning_state(game:str,q:str=""): return {"items":learned_recall(game,q,50)}
+
+@app.get("/pubg/training/goals")
+async def pubg_training_goals(): return pubg_goal_state()
 
 @app.get("/pubg/training/map")
 async def pubg_map(): return pubg_training_map()
