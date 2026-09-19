@@ -46,4 +46,26 @@ const pageHints={home:['masterAutonomy','systemDashboard','mobileHome'],games:['
 function studioPage(page,btn){document.querySelectorAll('.appnav button').forEach(b=>b.classList.remove('active'));if(btn)btn.classList.add('active');localStorage.setItem('kiraStudioPage',page);const cards=[...document.querySelectorAll('.wrap>.card,.wrap>section.card')];if(page==='home'){cards.forEach(c=>c.classList.remove('studio-section-hidden'));return}cards.forEach(c=>c.classList.add('studio-section-hidden'));let shown=0;if(page==='games'){const x=document.getElementById('pubgPanel');if(x){x.classList.remove('studio-section-hidden');shown++}}if(page==='voice'){const x=document.getElementById('voiceCatalog');if(x){x.classList.remove('studio-section-hidden');shown++}}if(page==='ai'){const x=document.getElementById('aiCatalog');if(x){x.classList.remove('studio-section-hidden');shown++}}if(page==='plugins'){const x=document.getElementById('pluginCatalog');if(x){x.classList.remove('studio-section-hidden');shown++}}const words={ai:['ии','llm','модель','ядро'],avatar:['live2d','аватар','голос'],stream:['стрим','twitch','youtube','obs','эфир'],memory:['памят'],plugins:['интеграц','telegram','платформ'],settings:['настрой','proxy','сеть']}[page]||[];cards.forEach(c=>{const t=(c.innerText||'').toLowerCase();if(words.some(w=>t.includes(w))){c.classList.remove('studio-section-hidden');shown++}});if(!shown)document.getElementById('systemDashboard')?.classList.remove('studio-section-hidden')}
 window.addEventListener('load',()=>{const p=localStorage.getItem('kiraStudioPage')||'home';const b=document.querySelector('.appnav button[data-page="'+p+'"]');studioPage(p,b)})
 </script>
+<script>
+function kiraPlatform(){
+ const ua=navigator.userAgent.toLowerCase();
+ if(window.KiraAndroid||ua.includes('android'))return 'Android';
+ if(ua.includes('windows'))return 'Windows';
+ if(ua.includes('linux'))return 'Arch / Linux';
+ return 'Kira Studio';
+}
+function buildAppShell(){
+ const platform=kiraPlatform();document.documentElement.dataset.platform=platform.toLowerCase().replaceAll(' ','-');
+ let chip=document.getElementById('platformChip');
+ if(!chip){chip=document.createElement('div');chip.id='platformChip';chip.className='platform-chip';document.body.appendChild(chip)}
+ chip.textContent='● '+platform;
+ const first=document.getElementById('firstRun');if(first&&!first.querySelector('.platform-welcome')){
+  const box=first.firstElementChild;if(box){const h=document.createElement('div');h.className='platform-welcome';h.innerHTML='<b>Kira Studio · '+platform+'</b><small>'+ (platform==='Android'?'Подключи безопасный HTTPS Kira Core, затем выбери голос и ИИ в Store.':'Локальный Kira Core запускается вместе с приложением. Store установит выбранные компоненты.') +'</small>';box.prepend(h)}
+ }
+}
+window.addEventListener('load',buildAppShell);
+</script>
+<style>
+.platform-chip{position:fixed;right:14px;top:12px;z-index:9997;padding:7px 11px;border:1px solid #4d3561;border-radius:999px;background:#130d1add;backdrop-filter:blur(12px);font:600 12px system-ui;color:#d7c5e6}.platform-chip::first-letter{color:#b46dff}.platform-welcome{display:grid;gap:5px;padding:13px 15px;margin-bottom:14px;border:1px solid #49325b;border-radius:16px;background:linear-gradient(135deg,#241630,#17101f)}.platform-welcome b{font-size:17px}.platform-welcome small{color:#bcaac9;line-height:1.45}@media(max-width:640px){.platform-chip{top:8px;right:8px;font-size:10px;padding:5px 8px}}
+</style>
 <script src="/store.js"></script></body></html>
