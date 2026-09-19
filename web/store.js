@@ -22,3 +22,16 @@ function enhanceKiraStore(){
 }
 const kiraStoreLoadBase=loadCatalog;
 loadCatalog=async function(){await kiraStoreLoadBase();document.querySelectorAll('.kira-store-toolbar').forEach(x=>x.remove());document.querySelectorAll('.catalogItem').forEach(c=>{const title=c.querySelector('h3');if(title){const groups=kiraStore.catalog||{};for(const kind of ['voices','ai','plugins']){const item=(groups[kind]||[]).find(i=>i.name===title.textContent);if(item){c.setAttribute('data-id',item.id);break}}}});enhanceKiraStore()}
+
+function storeItem(kind,id){return ((kiraStore.catalog||{})[kind]||[]).find(x=>x.id===id)}
+function openStoreDetail(kind,id){
+ const x=storeItem(kind,id);if(!x)return;let modal=document.getElementById('kiraStoreDetail');
+ if(!modal){modal=document.createElement('div');modal.id='kiraStoreDetail';modal.className='store-modal';document.body.appendChild(modal)}
+ const st=kiraStore.installed||{},yes=(st[kind]||[]).includes(id),active=kind==='voices'?String(st.active_voice||'').includes(id):st.active_ai===id;
+ const tags=[x.lang,x.engine,x.category,x.style,x.size_mb?'≈ '+x.size_mb+' MB':'',x.ram_gb?'RAM '+x.ram_gb+' GB':'',x.speed?'⚡ '+x.speed:'',x.quality?'✦ '+x.quality:''].filter(Boolean).map(v=>'<span>'+v+'</span>').join('');
+ modal.innerHTML='<div class="store-detail"><button class="store-close" onclick="closeStoreDetail()">✕</button><div class="store-detail-icon">'+(kind==='voices'?'🎙':kind==='ai'?'🧠':'🧩')+'</div><h2>'+x.name+'</h2><p>'+(x.note||'Компонент Kira Studio')+'</p><div class="catalog-meta">'+tags+'</div><div class="store-detail-actions">'+(kind==='voices'?'<button onclick="previewVoice(\''+id+'\')">▶ Послушать</button>':'')+(yes?'<button '+(active?'disabled':'')+' onclick="useCatalog(\''+kind+'\',\''+id+'\').then(()=>openStoreDetail(\''+kind+'\',\''+id+'\'))">'+(active?'★ Используется':'Использовать')+'</button><button onclick="removeCatalog(\''+kind+'\',\''+id+'\').then(closeStoreDetail)">🗑 Удалить</button>':'<button onclick="detailInstall(\''+kind+'\',\''+id+'\',this)">⬇ Установить</button>')+'</div></div>';modal.classList.add('open')
+}
+function closeStoreDetail(){document.getElementById('kiraStoreDetail')?.classList.remove('open')}
+async function detailInstall(kind,id,b){await installCatalog(kind,id,b);setTimeout(()=>openStoreDetail(kind,id),500)}
+document.addEventListener('click',e=>{const card=e.target.closest('.catalogItem');if(!card||e.target.closest('button'))return;const id=card.getAttribute('data-id');if(!id)return;let kind=card.closest('#voiceCatalogList')?'voices':card.closest('#aiCatalogList')?'ai':card.closest('#pluginCatalogList')?'plugins':'';if(kind)openStoreDetail(kind,id)})
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeStoreDetail()})
