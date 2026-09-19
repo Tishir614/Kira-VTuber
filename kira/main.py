@@ -1,5 +1,5 @@
 import os
-from .catalog import CATALOG, installed as catalog_installed, install as catalog_install, use as catalog_use, remove as catalog_remove, voice_preview, install_job, jobs as catalog_jobs, job as catalog_job
+from .catalog import CATALOG, installed as catalog_installed, install as catalog_install, use as catalog_use, remove as catalog_remove, voice_preview, install_job, jobs as catalog_jobs, job as catalog_job, cancel_job as catalog_cancel_job
 from pathlib import Path
 from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.responses import FileResponse, StreamingResponse
@@ -555,6 +555,13 @@ async def get_catalog_job(job_id:str):
     x=catalog_job(job_id)
     if not x: raise HTTPException(404,"job not found")
     return x
+
+@app.post("/catalog/jobs/{job_id}/cancel")
+async def cancel_catalog_job(job_id:str):
+    x=catalog_cancel_job(job_id)
+    if not x: raise HTTPException(404,"job not found")
+    return x
+
 
 @app.get("/catalog")
 async def catalog():
