@@ -1,5 +1,5 @@
 import httpx
-from .proxy import client as proxy_client
+from .proxy import routed_client as proxy_client
 from .settings_store import settings_store
 
 async def telegram_status():
