@@ -172,3 +172,11 @@ def test_pubg_navigation_memory():
     assert "pubg_training_map.json" in nav
     assert "nodes" in nav and "edges" in nav
     assert "nav_observe" in training and "choose_direction" in training
+
+
+def test_pubg_self_directed_training_goals():
+    goals=Path("kira/pubg_goals.py").read_text()
+    training=Path("kira/pubg_training.py").read_text()
+    assert "find_weapon" in goals and "find_scope" in goals and "practice" in goals
+    assert "target_shots" in goals and "completed" in goals
+    assert "goal_action" in training
