@@ -47,6 +47,7 @@ async def training_session(max_steps:int=40):
     previous_node=""
     try:
       learned=recall_learned("pubg_mobile","training aim loot recoil")
+      nav_node=""
       if not learned:
           try:await research("PUBG Mobile","training ground aim recoil loot",limit=2)
           except Exception:pass
