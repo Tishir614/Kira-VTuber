@@ -1,5 +1,5 @@
 import os
-from .catalog import CATALOG, installed as catalog_installed, install as catalog_install, use as catalog_use, remove as catalog_remove, voice_preview
+from .catalog import CATALOG, installed as catalog_installed, install as catalog_install, use as catalog_use, remove as catalog_remove, voice_preview, install_job, jobs as catalog_jobs, job as catalog_job
 from pathlib import Path
 from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.responses import FileResponse, StreamingResponse
@@ -546,6 +546,15 @@ async def obs_state(): return obs_config.load()
 @app.get("/overlay/state")
 async def overlay_state(): return stream_snapshot()
 
+
+@app.get("/catalog/jobs")
+async def get_catalog_jobs(): return {"jobs":catalog_jobs()}
+
+@app.get("/catalog/jobs/{job_id}")
+async def get_catalog_job(job_id:str):
+    x=catalog_job(job_id)
+    if not x: raise HTTPException(404,"job not found")
+    return x
 
 @app.get("/catalog")
 async def catalog():
