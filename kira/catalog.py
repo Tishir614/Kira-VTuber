@@ -24,6 +24,9 @@ async def install_job(kind,item_id):
  asyncio.create_task(run());return j
 CATALOG={
  "voices":[
+  {"id":"kokoro-anime-girl","name":"Kokoro Anime Girl","gender":"female","lang":"ja/en","engine":"kokoro","style":"яркий аниме / VTuber","note":"Kokoro 82M voice preset. Требует Kokoro runtime.","source":"hexgrad/Kokoro-82M","installable":false},
+  {"id":"gpt-sovits-anime","name":"GPT-SoVITS Anime","gender":"female","lang":"ja/zh/en/ko","engine":"gpt-sovits","style":"аниме / персонажный","note":"Few-shot движок для создания оригинального аниме-голоса из разрешённых записей.","source":"GPT-SoVITS","installable":false},
+  {"id":"kokoro-soft-girl","name":"Kokoro Soft Girl","gender":"female","lang":"en","engine":"kokoro","style":"мягкий / kawaii","note":"Лёгкий локальный TTS на базе Kokoro 82M.","source":"hexgrad/Kokoro-82M","installable":false},
   {"id":"ru_RU-irina-medium","name":"Ирина","gender":"female","lang":"ru-RU","engine":"piper","style":"спокойный, естественный","size_mb":65,"model":"https://huggingface.co/rhasspy/piper-voices/resolve/main/ru/ru_RU/irina/medium/ru_RU-irina-medium.onnx","config":"https://huggingface.co/rhasspy/piper-voices/resolve/main/ru/ru_RU/irina/medium/ru_RU-irina-medium.onnx.json"},
   {"id":"ru_RU-dmitri-medium","name":"Дмитрий","gender":"male","lang":"ru-RU","engine":"piper","model":"https://huggingface.co/rhasspy/piper-voices/resolve/main/ru/ru_RU/dmitri/medium/ru_RU-dmitri-medium.onnx","config":"https://huggingface.co/rhasspy/piper-voices/resolve/main/ru/ru_RU/dmitri/medium/ru_RU-dmitri-medium.onnx.json"},
   {"id":"ru_RU-denis-medium","name":"Денис","gender":"male","lang":"ru-RU","engine":"piper","size_mb":64,"model":"https://huggingface.co/rhasspy/piper-voices/resolve/main/ru/ru_RU/denis/medium/ru_RU-denis-medium.onnx","config":"https://huggingface.co/rhasspy/piper-voices/resolve/main/ru/ru_RU/denis/medium/ru_RU-denis-medium.onnx.json"},
@@ -31,6 +34,15 @@ CATALOG={
   {"id":"stylebert-jp-female1","name":"Anime JP Female","gender":"female","lang":"ja-JP","engine":"style-bert-vits2","style":"аниме, эмоциональный","note":"Style-Bert-VITS2: Female1, японский, эмоции neutral/happy/sad/angry/surprised/fear/disgust","source":"tokusan2/style-bert-vits2-jp","installable":false},
   {"id":"rinne-elu-jp","name":"Rinne Elu JP","gender":"female","lang":"ja-JP","engine":"style-bert-vits2","style":"персонажный, аниме","note":"Персонажный японский Style-Bert-VITS2 голос. Отдельная лицензия модели, требуется проверка условий перед установкой.","source":"kokuren/RinneElu","installable":false}],
  "ai":[
+  {"id":"qwen3.5:0.8b","name":"Qwen 3.5 0.8B","engine":"ollama","note":"Очень лёгкая мультимодальная модель","quality":"Базовая","speed":"Очень быстро"},
+  {"id":"qwen3.5:2b","name":"Qwen 3.5 2B","engine":"ollama","note":"Лёгкая мультимодальная модель","quality":"Хорошая","speed":"Очень быстро"},
+  {"id":"qwen3.5:9b","name":"Qwen 3.5 9B","engine":"ollama","note":"Более сильная мультимодальная модель","quality":"Высокая","speed":"Средне"},
+  {"id":"phi4-mini-reasoning","name":"Phi-4 Mini Reasoning","engine":"ollama","note":"Компактная reasoning-модель 3.8B","quality":"Высокая","speed":"Быстро"},
+  {"id":"qwen2.5vl:3b","name":"Qwen2.5-VL 3B","engine":"ollama","note":"Лёгкая модель для текста и изображений","quality":"Хорошая","speed":"Быстро"},
+  {"id":"granite3.3:2b","name":"Granite 3.3 2B","engine":"ollama","note":"Компактная модель IBM с tools","quality":"Хорошая","speed":"Быстро"},
+  {"id":"granite3.3:8b","name":"Granite 3.3 8B","engine":"ollama","note":"Более мощная IBM Granite","quality":"Высокая","speed":"Средне"},
+  {"id":"gemma3n:e2b","name":"Gemma 3n E2B","engine":"ollama","note":"Оптимизирована для ноутбуков и мобильных устройств","quality":"Хорошая","speed":"Быстро"},
+  {"id":"gemma3n:e4b","name":"Gemma 3n E4B","engine":"ollama","note":"Усиленная Gemma 3n для локальных устройств","quality":"Высокая","speed":"Средне"},
   {"id":"qwen3:4b","name":"Qwen3 4B","engine":"ollama","note":"Быстрая локальная модель","ram_gb":6,"quality":"Хорошая","speed":"Быстро"},
   {"id":"qwen3:8b","name":"Qwen3 8B","engine":"ollama","note":"Баланс качества и скорости","ram_gb":10,"quality":"Выше","speed":"Средне"},
   {"id":"qwen3:14b","name":"Qwen3 14B","engine":"ollama","note":"Более тяжёлая модель","ram_gb":18,"quality":"Высокая","speed":"Тяжелее"},
