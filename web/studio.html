@@ -98,12 +98,23 @@ function isKiraAndroid(){try{return !!window.KiraAndroid&&KiraAndroid.platform()
 function adaptStudioForAndroid(){
  if(!isKiraAndroid())return;
  document.documentElement.classList.add('kira-android');
+ const top=document.querySelector('.wrap');
+ if(top&&!document.getElementById('androidSetup')){
+  const panel=document.createElement('section');panel.className='card';panel.id='androidSetup';
+  panel.innerHTML='<h2>📱 Android Setup</h2><p class="help">Kira Studio использует подключённый Kira Core. Голоса, ИИ и плагины устанавливаются через Kira Store, а мобильный эфир запускается встроенным Broadcast Mode.</p><div id="androidSetupState" class="statusline">Проверяю компоненты…</div><div class="buttons"><button onclick="androidOpenStore()">🛍 Kira Store</button><button onclick="androidConfigureStream()">🔑 Настроить LIVE</button><button onclick="androidBroadcast(true)">🔴 Начать эфир</button><button onclick="androidBroadcast(false)">⏹ Стоп</button></div>';
+  const dash=document.getElementById('systemDashboard');(dash?.parentNode||top).insertBefore(panel,dash?.nextSibling||top.firstChild);
+ }
  document.querySelectorAll('.card').forEach(c=>{
-  if(c.textContent.includes('Голос / OBS')){const h=c.querySelector('h2');if(h)h.textContent='🎙️ Голос / Android';const p=c.querySelector('.help');if(p)p.textContent='Голос Киры и мобильный стрим. На Android вместо OBS используется Streamlabs Mobile.'}
-  if(c.textContent.includes('Автономный эфир')){c.querySelectorAll('label,input').forEach(x=>{if((x.textContent||'').includes('OBS')||['obsUrl','obsPass','obsScene'].includes(x.id))x.style.display='none'});const b=c.querySelector('.buttons');if(b){const x=document.createElement('button');x.textContent='📱 Открыть Streamlabs';x.onclick=()=>{try{KiraAndroid.openStreamlabs()}catch(e){location.href='https://streamlabs.com/mobile-app'}};b.prepend(x)}}
+  if(c.textContent.includes('Голос / OBS')){const h=c.querySelector('h2');if(h)h.textContent='🎙️ Голос / Android';const p=c.querySelector('.help');if(p)p.textContent='Голос выбирается в Kira Store. Озвучку выполняет подключённый Kira Core.'}
+  if(c.textContent.includes('Автономный эфир')){const h=c.querySelector('h2');if(h)h.textContent='🎬 Мобильный эфир';const p=c.querySelector('.help');if(p)p.textContent='На Android используется встроенный Broadcast Mode. OBS для мобильного эфира не нужен.';c.querySelectorAll('label,input').forEach(x=>{if((x.textContent||'').includes('OBS')||['obsUrl','obsPass','obsScene'].includes(x.id))x.style.display='none'})}
  });
- document.querySelectorAll('button').forEach(b=>{if((b.textContent||'').includes('OBS Overlay'))b.textContent='📱 Streamlabs Overlay'});
+ document.querySelectorAll('button').forEach(b=>{if((b.textContent||'').includes('OBS Overlay'))b.style.display='none'});
+ androidRefresh();
 }
+function androidOpenStore(){try{KiraAndroid.openStore()}catch(e){studioPage('plugins',document.querySelector('[data-page="plugins"]'))}}
+function androidConfigureStream(){if(!isKiraAndroid())return;const url=prompt('RTMP/RTMPS адрес платформы');if(!url)return;const key=prompt('Stream Key');if(!key)return;try{KiraAndroid.setStreamTarget(url,key);toast('LIVE настроен');androidRefresh()}catch(e){toast('Не удалось сохранить LIVE: '+e,true)}}
+function androidBroadcast(on){if(!isKiraAndroid())return;try{on?KiraAndroid.startBroadcast():KiraAndroid.stopBroadcast();setTimeout(androidRefresh,700)}catch(e){toast('Broadcast Mode: '+e,true)}}
+function androidRefresh(){if(!isKiraAndroid())return;const el=document.getElementById('androidSetupState');if(!el)return;try{const core=KiraAndroid.coreConfigured(),target=KiraAndroid.streamTargetConfigured(),live=KiraAndroid.broadcastRunning();el.innerHTML='<span class="pill '+(core?'ok':'bad')+'">Core '+(core?'✓':'×')+'</span><span class="pill '+(target?'ok':'bad')+'">LIVE '+(target?'✓':'×')+'</span><span class="pill '+(live?'ok':'')+'">Broadcast '+(live?'LIVE':'OFF')+'</span><br><small>ИИ, голоса и плагины управляются через Kira Store.</small>'}catch(e){el.textContent='Android bridge недоступен'}}
 window.addEventListener('load',adaptStudioForAndroid);
 </script>
 <style>.kira-android body{overscroll-behavior-y:none}.kira-android .desktopHint{display:none!important}@media(max-width:1050px){.kira-android .wrap{padding-top:14px}.kira-android button{touch-action:manipulation}}</style>
