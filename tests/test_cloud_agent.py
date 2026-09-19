@@ -164,3 +164,11 @@ def test_pubg_training_navigation_memory():
     assert "pubg_training_map.json" in nav
     assert '"nodes"' in nav and '"edges"' in nav
     assert "nav_observe" in training and "choose_direction" in training
+
+
+def test_pubg_navigation_memory():
+    nav=Path("kira/pubg_navigation.py").read_text()
+    training=Path("kira/pubg_training.py").read_text()
+    assert "pubg_training_map.json" in nav
+    assert "nodes" in nav and "edges" in nav
+    assert "nav_observe" in training and "choose_direction" in training
