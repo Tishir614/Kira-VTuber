@@ -7,8 +7,8 @@ PROMPT="""Analyze this PUBG Mobile TRAINING/NON-COMPETITIVE frame only.
 Return ONLY JSON:
 {"mode":"training|lobby|unknown","health":0,"armor":0,"weapon_primary":"","weapon_secondary":"",
 "ammo_current":0,"ammo_reserve":0,"scope":"","attachments":[],"nearby_loot":[],
-"training_targets":[],"crosshair_target":false,"reload_needed":false,"interact_available":false,
-"minimap":{"visible":false,"heading":"","markers":[]},"movement":{"blocked":false},
+"training_targets":[],"target_offset":{"x":0,"y":0},"crosshair_target":false,"reload_needed":false,"interact_available":false,
+"minimap":{"visible":false,"heading":"","markers":[]},"movement":{"blocked":false},"shot_feedback":{"hit":false,"vertical_drift":0},
 "visible_text":[],"confidence":0.0}
 Use only visible evidence. Unknown numbers should be -1 and unknown strings empty.
 Never infer hidden players, targets or game state."""
