@@ -36,6 +36,8 @@ async def _act(action:str):
       "forward":{"keys":["w"],"hold_ms":220},"left":{"keys":["a"],"hold_ms":140},
       "right":{"keys":["d"],"hold_ms":140},"back":{"keys":["s"],"hold_ms":140},
       "interact":{"keys":["e"],"hold_ms":45},"reload":{"keys":["r"],"hold_ms":45},
+      "jump":{"keys":["space"],"hold_ms":70},"sprint":{"keys":["shift","w"],"hold_ms":300},
+      "crouch":{"keys":["ctrl"],"hold_ms":60},"lean_left":{"keys":["q"],"hold_ms":60},"lean_right":{"keys":["e"],"hold_ms":60},
     }
     if action=="shoot":
         state.shots+=1;return await cloud_post("/game/click",{})
