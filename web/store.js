@@ -151,3 +151,33 @@ window.addEventListener('load',()=>setTimeout(addCharacterOptimizerShortcut,140)
 async function calibrateCharacterAI(b){const old=b.textContent;b.disabled=true;b.textContent='🧠 Проверяю ответы…';try{const r=await fetch('/character/calibrate-ai',{method:'POST'});if(!r.ok)throw Error(await r.text());const d=await r.json();b.textContent='✓ ИИ '+d.score+'/100';const p=await fetch('/character/profile',{cache:'no-store'}).then(x=>x.json());renderCharacterOptimizer(p)}catch(e){b.textContent=old;alert('Калибровка ИИ: '+e.message)}finally{setTimeout(()=>b.disabled=false,700)}}
 
 async function fullCharacterCalibration(b){const old=b.textContent;b.disabled=true;b.textContent='⚡ Калибрую персонажа…';try{const r=await fetch('/character/full-calibration',{method:'POST'});if(!r.ok)throw Error(await r.text());const d=await r.json();const p=d.profile||await fetch('/character/profile',{cache:'no-store'}).then(x=>x.json());renderCharacterOptimizer(p);let box=document.getElementById('characterCalibrationReport');if(!box){box=document.createElement('div');box.id='characterCalibrationReport';document.getElementById('characterOptimizerBody')?.appendChild(box)}box.className='calibration-report '+(d.ready?'ready':'warning');box.innerHTML='<b>'+(d.ready?'✓ Персонаж готов':'⚠ Требуется внимание')+'</b>'+d.steps.map(x=>'<div><span>'+(x.ok?'✓':'✕')+' '+x.id+'</span><small>'+(x.score!=null?'оценка '+x.score+'/100':x.error||'готово')+'</small></div>').join('');b.textContent=d.ready?'✓ Калибровка завершена':'⚠ Калибровка завершена'}catch(e){b.textContent=old;alert('Полная калибровка: '+e.message)}finally{setTimeout(()=>b.disabled=false,900)}}
+
+function openVoiceCompare(){
+ const voices=(kiraStore.catalog?.voices||[]).filter(x=>x.gender==='female');
+ let m=document.getElementById('voiceCompare');if(!m){m=document.createElement('div');m.id='voiceCompare';m.className='store-modal';document.body.appendChild(m)}
+ const opts=voices.map(x=>'<option value="'+x.id+'">'+esc(x.name)+'</option>').join('');
+ m.innerHTML='<div class="store-detail voice-compare"><button class="store-close" onclick="closeVoiceCompare()">✕</button><div class="store-detail-icon">🎧</div><h2>A/B сравнение голосов</h2><p>Одна фраза, разные голоса. Прослушивание не меняет голос персонажа.</p><input id="voiceCompareText" maxlength="240" value="Привет! Я Кира. Давай проверим, какой голос подходит мне лучше."><div class="voice-compare-grid">'+[0,1,2,3].map((n)=>'<div><select id="voiceCompare'+n+'"><option value="">Голос '+(n+1)+'</option>'+opts+'</select><button onclick="playComparedVoice('+n+',this)">▶ Прослушать</button><button onclick="selectComparedVoice('+n+',this)">★ Выбрать</button></div>').join('')+'</div><small>Для прослушивания движок и голос должны быть доступны в Store.</small></div>';
+ m.classList.add('open')
+}
+function closeVoiceCompare(){document.getElementById('voiceCompare')?.classList.remove('open')}
+function comparedVoiceId(n){return document.getElementById('voiceCompare'+n)?.value||''}
+async function playComparedVoice(n,b){
+ const id=comparedVoiceId(n);if(!id)return;const text=document.getElementById('voiceCompareText')?.value.trim()||'Привет! Я Кира.';
+ const old=b.textContent;b.disabled=true;b.textContent='⏳ Генерация…';
+ try{const a=new Audio('/catalog/voices/'+encodeURIComponent(id)+'/preview?text='+encodeURIComponent(text)+'&t='+Date.now());await a.play();b.textContent='▶ Играет'}
+ catch(e){b.textContent='⚠ Ошибка'}finally{setTimeout(()=>{b.disabled=false;b.textContent=old},1200)}
+}
+async function selectComparedVoice(n,b){
+ const id=comparedVoiceId(n);if(!id)return;const st=kiraStore.installed||{};
+ if(!(st.voices||[]).includes(id)){alert('Сначала установите или добавьте этот голос в Store.');return}
+ const old=b.textContent;b.disabled=true;b.textContent='⏳ Выбираю…';
+ try{const r=await fetch('/catalog/voices/'+encodeURIComponent(id)+'/use',{method:'POST'});if(!r.ok)throw Error(await r.text());await loadCatalog();b.textContent='★ Выбран'}
+ catch(e){b.textContent='⚠ Ошибка'}finally{setTimeout(()=>{b.disabled=false;b.textContent=old},900)}
+}
+function addVoiceCompareShortcut(){
+ const root=document.getElementById('voiceCatalog');if(!root||document.getElementById('voiceCompareBtn'))return;
+ const b=document.createElement('button');b.id='voiceCompareBtn';b.textContent='🎧 Сравнить голоса';b.onclick=openVoiceCompare;
+ const bar=root.querySelector('.kira-store-toolbar');if(bar)bar.appendChild(b);else root.prepend(b)
+}
+const voiceCompareLoad=loadCatalog;
+loadCatalog=async function(){await voiceCompareLoad();addVoiceCompareShortcut()}
