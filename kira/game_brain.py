@@ -4,7 +4,7 @@ import asyncio, json
 import httpx
 from .cloud_client import _url
 from .llm import chat
-from .vision import analyze_game
+from .vision import analyze_game, describe_game
 from .game_memory import recall, remember
 from .game_reflex import choose as reflex_choose, record as reflex_record
 from .game_profile import get as game_profile, session as profile_session, step as profile_step, death as profile_death, update_world
