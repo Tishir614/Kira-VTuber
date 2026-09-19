@@ -8,12 +8,18 @@ DATA=Path(os.environ.get("KIRA_DATA_DIR","runtime"))
 JOBS={}
 
 def jobs(): return list(JOBS.values())
+def cancel_job(job_id):
+ j=JOBS.get(job_id)
+ if not j:return None
+ if j.get("status") in ("done","error","cancelled"):return j
+ j["cancel_requested"]=True;j["status"]="cancelling";return j
 def job(job_id): return JOBS.get(job_id)
 async def install_job(kind,item_id):
  jid=uuid.uuid4().hex[:12]; j={"id":jid,"kind":kind,"item_id":item_id,"status":"queued","progress":0,"created":time.time(),"error":""};JOBS[jid]=j
  async def run():
   try:
-   j.update(status="installing",progress=1,bytes_done=0,bytes_total=0,speed_bps=0);await install(kind,item_id,j);j.update(status="done",progress=100)
+   j.update(status="installing",progress=1,bytes_done=0,bytes_total=0,speed_bps=0);await install(kind,item_id,j);j.update(status="cancelled" if j.get("cancel_requested") else "done",progress=j.get("progress",0) if j.get("cancel_requested") else 100)
+  except asyncio.CancelledError:j.update(status="cancelled",error="",speed_bps=0)
   except Exception as exc:j.update(status="error",error=str(exc),progress=0)
  asyncio.create_task(run());return j
 CATALOG={
@@ -44,7 +50,8 @@ def _download(url: str, target: Path, progress=None):
    chunk=r.read(1024*512)
    if not chunk:break
    out.write(chunk);done+=len(chunk)
-   if progress:progress(done,total,max(time.time()-t0,.001))
+   if progress:
+    progress(done,total,max(time.time()-t0,.001))
  os.replace(part,target)
  return done,total
 
@@ -60,6 +67,7 @@ async def install(kind,item_id,job_state=None):
    base=0 if key=="model" else 94
    def report(done,total,elapsed,b=base,w=weight):
     if job_state is not None:
+     if job_state.get("cancel_requested"): raise asyncio.CancelledError()
      pct=(done/total if total else 0);job_state.update(bytes_done=done,bytes_total=total,speed_bps=int(done/elapsed),progress=min(99,int(b+pct*w*100)))
    await asyncio.to_thread(_download,item[key],target,report)
   st["active_voice"]=str(d/Path(item["model"]).name)
