@@ -8,7 +8,7 @@ DATA=Path(os.environ.get("KIRA_DATA_DIR","runtime"))
 JOBS={}
 ENGINE_PACKAGES={
  "piper":{"name":"Piper","package":"piper-tts","description":"Лёгкий локальный TTS для ONNX-голосов."},
- "kokoro":{"name":"Kokoro","package":"kokoro","description":"Локальный нейросетевой TTS для персонажных голосов."},
+ "kokoro":{"name":"Kokoro","package":"kokoro>=0.9.4","description":"Локальный нейросетевой TTS для персонажных голосов."},
  "gpt-sovits":{"name":"GPT-SoVITS","package":None,"manual":True,"description":"Few-shot TTS. Требует отдельную установку Python 3.10 и системных зависимостей."}
 }
 def engine_state():
@@ -128,6 +128,7 @@ async def install(kind,item_id,job_state=None):
  if not item:raise ValueError("Unknown catalog item")
  st=installed()
  if kind=="voices":
+  if item.get("installable") is False:raise RuntimeError("Этот голос пока доступен только как описание/пресет и не имеет отдельного пакета модели")
   engine=item.get("engine","piper")
   if engine!="piper" and engine not in st.get("engines",[]):raise RuntimeError("Сначала установите движок "+engine)
   if "model" not in item or "config" not in item:raise RuntimeError("Для этого голоса требуется пакет модели, установка будет добавлена отдельно")
@@ -141,7 +142,7 @@ async def install(kind,item_id,job_state=None):
      if job_state.get("cancel_requested"): raise asyncio.CancelledError()
      pct=(done/total if total else 0);job_state.update(bytes_done=done,bytes_total=total,speed_bps=int(done/elapsed),progress=min(99,int(b+pct*w*100)))
    await asyncio.to_thread(_download,item[key],target,report)
-  st["active_voice"]=str(d/Path(item["model"]).name)
+  st["active_voice"]=str(d/Path(item["model"]).name);st["active_voice_id"]=item_id;st["active_voice_engine"]=engine
  elif kind=="ai":
   ollama=shutil.which("ollama")
   if not ollama:raise RuntimeError("Ollama is not installed")
@@ -169,7 +170,7 @@ async def use(kind,item_id):
  if item_id not in st.get(kind,[]):raise ValueError("Item is not installed")
  if kind=="voices":
   item=next(x for x in CATALOG["voices"] if x["id"]==item_id);d=DATA/"voices"/item_id
-  st["active_voice"]=str(d/Path(item["model"]).name)
+  st["active_voice"]=str(d/Path(item["model"]).name);st["active_voice_id"]=item_id;st["active_voice_engine"]=item.get("engine","piper")
  elif kind=="ai":st["active_ai"]=item_id
  elif kind=="plugins":st["active_plugin"]=item_id
  _save(st);return {"ok":True,"installed":st}
@@ -179,7 +180,8 @@ async def remove(kind,item_id):
  if kind=="voices":
   shutil.rmtree(DATA/"voices"/item_id,ignore_errors=True)
   if item_id in st.get("voices",[]):st["voices"].remove(item_id)
-  if item_id in st.get("active_voice",""):st["active_voice"]=""
+  if item_id==st.get("active_voice_id"):
+   st["active_voice"]="";st["active_voice_id"]="";st["active_voice_engine"]=""
  elif kind=="ai":
   ollama=shutil.which("ollama")
   if ollama:
