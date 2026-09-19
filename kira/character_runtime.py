@@ -30,4 +30,26 @@ def ai_context():
  features=", ".join(k for k,v in caps.items() if v) or "базовая модель"
  return f"""Ты управляешь персонажем {x.get('name','Kira')}. Стиль ответа: {x['ai'].get('reply_style','естественный')}.
 Доступные визуальные возможности аватара: {features}. Не описывай движения, которых модель не поддерживает."""
-def snapshot():return {"profile":load(),"capabilities":capabilities()}
+def recommend():
+ caps=capabilities()
+ furry=caps.get("ear_l") or caps.get("ear_r") or caps.get("tail_x")
+ expressive=sum(bool(caps.get(x)) for x in ("brow_l","brow_r","mouth_form","eye_l","eye_r"))
+ return {
+  "voice":{"speed":0.96 if expressive>=3 else 1.0,"energy":0.82 if furry else 0.68,"mouth_gain":1.08 if caps.get("mouth_form") else 1.0},
+  "ai":{"temperature":0.82 if expressive>=3 else 0.72,"reply_style":"эмоциональный VTuber, живой и естественный" if expressive>=3 else "живой, естественный, персонажный"},
+  "motion":{"speech_energy":0.78 if expressive>=3 else 0.62,"ear_reactivity":0.72 if furry else 0.0,"tail_reactivity":0.62 if caps.get("tail_x") else 0.0},
+  "plugins":{"allow_avatar_events":True}
+ }
+def auto_tune():
+ r=recommend();save(r);return snapshot()
+def plugin_event(kind:str,intensity:float=.5):
+ x=load();caps=capabilities()
+ if not x.get("plugins",{}).get("allow_avatar_events",True):return {}
+ intensity=max(0.0,min(1.0,float(intensity)));out={}
+ if caps.get("ear_l"):out["ear_l"]=intensity
+ if caps.get("ear_r"):out["ear_r"]=intensity*.85
+ if caps.get("tail_x"):out["tail_x"]=intensity
+ if caps.get("brow_l"):out["brow_l"]=intensity*.35
+ if caps.get("brow_r"):out["brow_r"]=intensity*.35
+ return {"event":kind,"avatar":out}
+def snapshot():return {"profile":load(),"capabilities":capabilities(),"recommended":recommend()}
