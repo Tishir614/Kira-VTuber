@@ -3,7 +3,26 @@ async function loadCatalog(){try{const r=await fetch('/catalog',{cache:'no-store
 function meta(x){return [x.size_mb?'≈ '+x.size_mb+' MB':'',x.ram_gb?'RAM '+x.ram_gb+' GB':'',x.speed?'⚡ '+x.speed:'',x.quality?'✦ '+x.quality:'',x.style||'',x.category||''].filter(Boolean).map(v=>'<span>'+v+'</span>').join('')}
 function renderStore(kind,target){const el=document.getElementById(target);if(!el)return;let items=kiraStore.catalog[kind]||[];if(kind==='voices')items=items.filter(x=>x.gender==='female');const st=kiraStore.installed||{};el.innerHTML=items.map(x=>{const yes=(st[kind]||[]).includes(x.id);const active=kind==='voices'?String(st.active_voice||'').includes(x.id):st.active_ai===x.id;return '<div class="catalogItem" data-search="'+(x.name+' '+(x.note||'')+' '+(x.category||'')).toLowerCase()+'"><h3>'+x.name+'</h3><small>'+(x.lang||x.note||x.kind||'')+'</small><div class="catalog-meta">'+meta(x)+'</div><div class="actions">'+(kind==='voices'?'<button onclick="previewVoice(\''+x.id+'\')">▶ Послушать</button>':'')+(yes?'<button '+(active?'disabled':'')+' onclick="useCatalog(\''+kind+'\',\''+x.id+'\')">'+(active?'★ Используется':'Использовать')+'</button><button onclick="removeCatalog(\''+kind+'\',\''+x.id+'\')">🗑</button>':'<button onclick="installCatalog(\''+kind+'\',\''+x.id+'\',this)">⬇ Установить</button>')+'</div></div>'}).join('')}
 function storeSearch(inp,target){const q=inp.value.trim().toLowerCase();document.querySelectorAll('#'+target+' .catalogItem').forEach(c=>c.style.display=(c.dataset.search||'').includes(q)?'':'none')}
-async function installCatalog(kind,id,b){b.disabled=true;b.textContent='⏳ Установка…';const box=b.closest('.catalogItem'),bar=document.createElement('div');bar.className='store-progress';bar.innerHTML='<i></i>';box.appendChild(bar);let n=5;const t=setInterval(()=>{n=Math.min(90,n+5);bar.firstChild.style.width=n+'%'},400);try{const r=await fetch('/catalog/'+kind+'/'+encodeURIComponent(id)+'/install',{method:'POST'});if(!r.ok)throw Error(await r.text());clearInterval(t);bar.firstChild.style.width='100%';setTimeout(loadCatalog,250)}catch(e){clearInterval(t);bar.remove();b.disabled=false;b.textContent='↻ Повторить'}}
+async function installCatalog(kind,id,b){
+ b.disabled=true;b.textContent='⏳ В очередь…';
+ try{
+  const r=await fetch('/catalog/'+kind+'/'+encodeURIComponent(id)+'/install',{method:'POST'});if(!r.ok)throw Error(await r.text());
+  const job=await r.json();showDownloadManager();await watchStoreJob(job.id,b);
+ }catch(e){b.disabled=false;b.textContent='↻ Повторить'}
+}
+async function watchStoreJob(id,b){
+ for(;;){const r=await fetch('/catalog/jobs/'+id,{cache:'no-store'});if(!r.ok)break;const j=await r.json();renderDownloadJob(j);
+  if(j.status==='done'){b.textContent='✓ Готово';await loadCatalog();return}
+  if(j.status==='error'){b.disabled=false;b.textContent='↻ Повторить';return}
+  await new Promise(x=>setTimeout(x,700));
+ }
+}
+function showDownloadManager(){let el=document.getElementById('kiraDownloads');if(!el){el=document.createElement('div');el.id='kiraDownloads';el.className='store-downloads';el.innerHTML='<div class="downloads-head"><b>⬇ Загрузки</b><button onclick="this.closest(\'.store-downloads\').classList.toggle(\'collapsed\')">⌄</button></div><div id="kiraDownloadJobs"></div>';document.body.appendChild(el)}return el}
+function renderDownloadJob(j){showDownloadManager();const root=document.getElementById('kiraDownloadJobs');let row=document.getElementById('job-'+j.id);if(!row){row=document.createElement('div');row.id='job-'+j.id;row.className='download-job';root.prepend(row)}const p=Math.max(0,Math.min(100,j.progress||0));row.innerHTML='<div><b>'+j.item_id+'</b><small>'+j.status+'</small></div><div class="download-bar"><i style="width:'+p+'%"></i></div>'+(j.error?'<small class="download-error">'+j.error+'</small>':'')}
+}
+async function restoreDownloads(){try{const d=await (await fetch('/catalog/jobs',{cache:'no-store'})).json();if(d.jobs&&d.jobs.length){showDownloadManager();d.jobs.slice(-8).forEach(renderDownloadJob)}}catch(e){}}
+window.addEventListener('load',restoreDownloads);
+
 function previewVoice(id){new Audio('/catalog/voices/'+encodeURIComponent(id)+'/preview?t='+Date.now()).play().catch(console.error)}
 async function useCatalog(kind,id){const r=await fetch('/catalog/'+kind+'/'+encodeURIComponent(id)+'/use',{method:'POST'});if(r.ok)loadCatalog()}
 async function removeCatalog(kind,id){if(!confirm('Удалить '+id+'?'))return;const r=await fetch('/catalog/'+kind+'/'+encodeURIComponent(id),{method:'DELETE'});if(r.ok)loadCatalog()}
