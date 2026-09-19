@@ -3,6 +3,7 @@ import math
 import random
 from time import monotonic
 from .live2d import live2d
+from .character_runtime import load as character_profile, capabilities as character_capabilities
 
 class AvatarController:
     def __init__(self):
@@ -17,6 +18,7 @@ class AvatarController:
         while self.running:
             t=monotonic()-start
             speaking=live2d.state.speaking
+            tuning=character_profile().get("motion",{});caps=character_capabilities()
             # Layered motion: slow posture drift + speech emphasis + tiny human-like corrections.
             drift_x=math.sin(t*.43)*4.2 + math.sin(t*.13)*1.2
             drift_y=math.sin(t*.29)*2.2
@@ -28,11 +30,11 @@ class AvatarController:
             live2d.state.body_angle_x=math.sin(t*.22)*1.8+(math.sin(t*.9)*.7 if speaking else 0)
             live2d.state.breath=(math.sin(t*1.65)+1)/2
             # Optional furry/character parameters. Models without them simply ignore these values.
-            ear_energy=.16 if speaking else .07
-            live2d.state.ear_l=math.sin(t*1.9)*ear_energy
-            live2d.state.ear_r=math.sin(t*1.9+.65)*ear_energy
-            live2d.state.tail_x=math.sin(t*(1.15 if speaking else .72))*(.32 if speaking else .18)
-            live2d.state.tail_y=math.sin(t*.51)*.08
+            ear_energy=(.16 if speaking else .07)*float(tuning.get("ear_reactivity",.55))
+            live2d.state.ear_l=math.sin(t*1.9)*ear_energy if caps.get("ear_l") else 0.0
+            live2d.state.ear_r=math.sin(t*1.9+.65)*ear_energy if caps.get("ear_r") else 0.0
+            live2d.state.tail_x=math.sin(t*(1.15 if speaking else .72))*(.32 if speaking else .18)*float(tuning.get("tail_reactivity",.45)) if caps.get("tail_x") else 0.0
+            live2d.state.tail_y=math.sin(t*.51)*.08*float(tuning.get("tail_reactivity",.45)) if caps.get("tail_y") else 0.0
             # Keep face values bounded so malformed models cannot receive runaway motion.
             live2d.state.mouth_open=max(0.0,min(1.0,live2d.state.mouth_open))
             live2d.state.eye_x=max(-1.0,min(1.0,live2d.state.eye_x))
