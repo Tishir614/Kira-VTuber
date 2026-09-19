@@ -19,7 +19,7 @@ async function watchStoreJob(id,b){
 }
 function showDownloadManager(){let el=document.getElementById('kiraDownloads');if(!el){el=document.createElement('div');el.id='kiraDownloads';el.className='store-downloads';el.innerHTML='<div class="downloads-head"><b>⬇ Загрузки</b><button onclick="this.closest(\'.store-downloads\').classList.toggle(\'collapsed\')">⌄</button></div><div id="kiraDownloadJobs"></div>';document.body.appendChild(el)}return el}
 function renderDownloadJob(j){showDownloadManager();const root=document.getElementById('kiraDownloadJobs');let row=document.getElementById('job-'+j.id);if(!row){row=document.createElement('div');row.id='job-'+j.id;row.className='download-job';root.prepend(row)}const p=Math.max(0,Math.min(100,j.progress||0)),fmt=n=>{if(!n)return '';const u=['B','KB','MB','GB'];let i=0;while(n>=1024&&i<3){n/=1024;i++}return n.toFixed(i?1:0)+' '+u[i]},meta=j.bytes_total?fmt(j.bytes_done)+' / '+fmt(j.bytes_total)+(j.speed_bps?' · '+fmt(j.speed_bps)+'/s':''):(j.message||'');
- row.innerHTML='<div><b>'+j.item_id+'</b><small>'+p+'% · '+j.status+'</small></div><div class="download-bar"><i style="width:'+p+'%"></i></div>'+(meta?'<small>'+meta+'</small>':'')+(j.error?'<small class="download-error">'+j.error+'</small>':'')}
+ row.innerHTML='<div><b>'+j.item_id+'</b><small>'+p+'% · '+j.status+'</small></div><div class="download-bar"><i style="width:'+p+'%"></i></div>'+(meta?'<small>'+meta+'</small>':'')+(j.error?'<small class="download-error">'+j.error+'</small>':'')+(['queued','installing','cancelling'].includes(j.status)?'<button class="download-cancel" onclick="cancelStoreJob(\''+j.id+'\')">Отмена</button>':'')}
 }
 async function restoreDownloads(){try{const d=await (await fetch('/catalog/jobs',{cache:'no-store'})).json();if(d.jobs&&d.jobs.length){showDownloadManager();d.jobs.slice(-8).forEach(renderDownloadJob)}}catch(e){}}
 window.addEventListener('load',restoreDownloads);
@@ -55,3 +55,5 @@ function closeStoreDetail(){document.getElementById('kiraStoreDetail')?.classLis
 async function detailInstall(kind,id,b){await installCatalog(kind,id,b);setTimeout(()=>openStoreDetail(kind,id),500)}
 document.addEventListener('click',e=>{const card=e.target.closest('.catalogItem');if(!card||e.target.closest('button'))return;const id=card.getAttribute('data-id');if(!id)return;let kind=card.closest('#voiceCatalogList')?'voices':card.closest('#aiCatalogList')?'ai':card.closest('#pluginCatalogList')?'plugins':'';if(kind)openStoreDetail(kind,id)})
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeStoreDetail()})
+
+async function cancelStoreJob(id){try{await fetch('/catalog/jobs/'+id+'/cancel',{method:'POST'});const r=await fetch('/catalog/jobs/'+id,{cache:'no-store'});if(r.ok)renderDownloadJob(await r.json())}catch(e){}}
