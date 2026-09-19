@@ -8,9 +8,10 @@
  const app=new PIXI.Application({view:c,resizeTo:window,backgroundAlpha:0,autoStart:true});const M=PIXI.live2d.Live2DModel;
  const model=await M.from(info.model,{autoInteract:false});app.stage.addChild(model);
  function fit(){let s=Math.min(innerWidth/model.width,innerHeight/model.height)*.95;model.scale.set(s);model.anchor.set(.5,.5);model.x=innerWidth/2;model.y=innerHeight/2}fit();addEventListener('resize',fit);
- const core=model.internalModel.coreModel;
- function set(id,v){try{core.setParameterValueById(id,v)}catch{}}
- async function tick(){try{let a=await fetch('/avatar/state').then(r=>r.json());set('ParamAngleX',a.angle_x||0);set('ParamAngleY',a.angle_y||0);set('ParamAngleZ',a.angle_z||0);set('ParamBodyAngleX',(a.angle_x||0)*.25);set('ParamEyeBallX',a.eye_x??((a.angle_x||0)/30));set('ParamEyeBallY',a.eye_y??(-(a.angle_y||0)/30));set('ParamMouthOpenY',Math.max(0,Math.min(1,a.mouth_open||0)));}catch{}requestAnimationFrame(tick)}tick();
+ const core=model.internalModel.coreModel, map=info.profile?.parameters||{};
+ function setRole(role,v){const id=map[role];if(!id)return;try{core.setParameterValueById(id,v)}catch{}}
+ function safe(v,lo=-1,hi=1){v=Number(v);return Number.isFinite(v)?Math.max(lo,Math.min(hi,v)):0}
+ async function tick(){try{let a=await fetch('/avatar/state').then(r=>r.json());setRole('angle_x',safe(a.angle_x,-30,30));setRole('angle_y',safe(a.angle_y,-30,30));setRole('angle_z',safe(a.angle_z,-30,30));setRole('body_angle_x',safe(a.body_angle_x??((a.angle_x||0)*.25),-15,15));setRole('eye_x',safe(a.eye_x));setRole('eye_y',safe(a.eye_y));setRole('eye_l',safe(a.eye_l,0,1));setRole('eye_r',safe(a.eye_r,0,1));setRole('brow_l',safe(a.brow_l));setRole('brow_r',safe(a.brow_r));setRole('mouth_open',safe(a.mouth_open,0,1));setRole('mouth_form',safe(a.mouth_form));setRole('breath',safe(a.breath,0,1));setRole('ear_l',safe(a.ear_l));setRole('ear_r',safe(a.ear_r));setRole('tail_x',safe(a.tail_x));setRole('tail_y',safe(a.tail_y));}catch{}requestAnimationFrame(tick)}tick();
  err.remove();
 }catch(e){err.textContent='Live2D: '+e.message}})();
 </script></body></html>
