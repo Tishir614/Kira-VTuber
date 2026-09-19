@@ -11,6 +11,7 @@ from .experience_engine import record as record_experience
 from .learning_memory import recall as recall_learned
 from .research_brain import research
 from .pubg_aim import adjust as aim_adjust, compensate as recoil_compensate, learn as learn_aim
+from .pubg_loot import observe as learn_loadout, choose_loot
 
 @dataclass
 class PUBGTrainingState:
@@ -49,6 +50,7 @@ async def training_session(max_steps:int=40):
       for _ in range(max(1,min(max_steps,120))):
         if not state.running or not state.training_confirmed:break
         pv=await pubg_observe()
+        learn_loadout(pv)
         if pv.get("mode")!="training":
             state.last_error="Autonomous PUBG controls paused: training mode not visually confirmed";break
         before=await analyze_game("PUBG Mobile TRAINING GROUND only. Practice movement, loot and shooting at training targets.")
@@ -57,7 +59,9 @@ async def training_session(max_steps:int=40):
         elif pv.get("training_targets") and not pv.get("crosshair_target"):
             off=pv.get("target_offset") or {};await aim_adjust(float(off.get("x",0) or 0),float(off.get("y",0) or 0),pv.get("weapon_primary",""));action="aim"
         elif pv.get("crosshair_target") and pv.get("training_targets"):action="shoot"
-        elif pv.get("interact_available") or pv.get("nearby_loot"):action="interact"
+        elif pv.get("nearby_loot"):
+            wanted=choose_loot(pv);action="interact" if wanted else "forward"
+        elif pv.get("interact_available"):action="interact"
         elif pv.get("movement",{}).get("blocked"):action=["left","right"][state.steps%2]
         elif ui in {"loading","menu","dialog","unknown"}:action="forward"
         else:action=["forward","left","right"][state.steps%3]
