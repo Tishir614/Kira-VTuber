@@ -36,15 +36,32 @@ jobs:
         run: python -c "import kira.main; import webview; print('Kira desktop imports OK')"
       - name: Build desktop executable
         run: pyinstaller --clean --noconfirm desktop/KiraStudio.spec
+      - name: Build Windows installer
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          choco install innosetup -y
+          & "C:\\Program Files (x86)\\Inno Setup 6\\ISCC.exe" desktop/windows/installer.iss
+      - name: Prepare Linux package
+        if: runner.os == 'Linux'
+        run: |
+          mkdir -p package
+          cp dist/KiraStudio package/KiraStudio
+          cp desktop/linux/install.sh package/install.sh
+          cp desktop/linux/kira-studio.desktop package/kira-studio.desktop
+          chmod +x package/KiraStudio package/install.sh
+          tar -czf Kira-Studio-Linux-x86_64.tar.gz -C package .
       - name: Upload Windows
         if: runner.os == 'Windows'
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact }}
-          path: dist/KiraStudio.exe
+          path: |
+            dist/KiraStudio.exe
+            desktop/windows/Output/Kira-Studio-Setup.exe
       - name: Upload Linux
         if: runner.os == 'Linux'
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact }}
-          path: dist/KiraStudio
+          path: Kira-Studio-Linux-x86_64.tar.gz
