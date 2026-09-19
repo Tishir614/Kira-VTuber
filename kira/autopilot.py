@@ -3,7 +3,7 @@ from dataclasses import dataclass, asdict
 from pathlib import Path
 from time import time
 import httpx
-from .proxy import client as proxy_client
+from .proxy import routed_client as proxy_client
 from .pipeline import respond
 from .settings_store import settings_store
 
