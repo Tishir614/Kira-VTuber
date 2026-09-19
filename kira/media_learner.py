@@ -1,4 +1,4 @@
-"""Study public web/video content through Kira Cloud without downloading media."""
+"""Study public web/video content through Kira Cloud by observing it in place."""
 from __future__ import annotations
 import asyncio
 from .cloud_client import cloud_post
