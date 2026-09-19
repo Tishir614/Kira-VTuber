@@ -55,6 +55,7 @@ from .research_brain import research
 from .adaptive_learning import snapshot as adaptive_learning_status
 from .experience_engine import summary as game_experience_summary
 from .proxy import status as proxy_status
+from .network_brain import network_brain
 import asyncio
 
 app = FastAPI(title="Kira VTuber Core", version="0.2.0")
@@ -371,6 +372,12 @@ async def learning_study(req:StudyRequest):
 
 @app.get("/learning/{game}")
 async def learning_state(game:str,q:str=""): return {"items":learned_recall(game,q,50)}
+
+@app.get("/network")
+async def kira_network(): return network_brain.snapshot()
+
+@app.post("/network/check")
+async def kira_network_check(): return await network_brain.check_all()
 
 @app.get("/proxy/status")
 async def kira_proxy_status(): return await proxy_status()
