@@ -54,9 +54,13 @@ async def install_job(kind,item_id):
  asyncio.create_task(run());return j
 CATALOG={
  "voices":[
-  {"id":"kokoro-anime-girl","name":"Kokoro Anime Girl","gender":"female","lang":"ja/en","engine":"kokoro","style":"яркий аниме / VTuber","note":"Kokoro 82M voice preset. Требует Kokoro runtime.","source":"hexgrad/Kokoro-82M","installable":False},
+  {"id":"af_heart","name":"Kokoro Heart","gender":"female","lang":"en-US","engine":"kokoro","style":"тёплый / VTuber","preset":True,"note":"Встроенный голос Kokoro.","source":"hexgrad/Kokoro-82M"},
+  {"id":"af_bella","name":"Kokoro Bella","gender":"female","lang":"en-US","engine":"kokoro","style":"яркий / эмоциональный","preset":True,"note":"Встроенный голос Kokoro.","source":"hexgrad/Kokoro-82M"},
+  {"id":"af_nicole","name":"Kokoro Nicole","gender":"female","lang":"en-US","engine":"kokoro","style":"чёткий / спокойный","preset":True,"note":"Встроенный голос Kokoro.","source":"hexgrad/Kokoro-82M"},
+  {"id":"af_sarah","name":"Kokoro Sarah","gender":"female","lang":"en-US","engine":"kokoro","style":"мягкий","preset":True,"note":"Встроенный голос Kokoro.","source":"hexgrad/Kokoro-82M"},
+  {"id":"jf_alpha","name":"Kokoro Alpha JP","gender":"female","lang":"ja-JP","engine":"kokoro","style":"японский / персонажный","preset":True,"note":"Встроенный японский голос Kokoro.","source":"hexgrad/Kokoro-82M"},
+  {"id":"jf_nezumi","name":"Kokoro Nezumi JP","gender":"female","lang":"ja-JP","engine":"kokoro","style":"японский / мягкий","preset":True,"note":"Встроенный японский голос Kokoro.","source":"hexgrad/Kokoro-82M"},
   {"id":"gpt-sovits-anime","name":"GPT-SoVITS Anime","gender":"female","lang":"ja/zh/en/ko","engine":"gpt-sovits","style":"аниме / персонажный","note":"Few-shot движок для создания оригинального аниме-голоса из разрешённых записей.","source":"GPT-SoVITS","installable":False},
-  {"id":"kokoro-soft-girl","name":"Kokoro Soft Girl","gender":"female","lang":"en","engine":"kokoro","style":"мягкий / kawaii","note":"Лёгкий локальный TTS на базе Kokoro 82M.","source":"hexgrad/Kokoro-82M","installable":False},
   {"id":"ru_RU-irina-medium","name":"Ирина","gender":"female","lang":"ru-RU","engine":"piper","style":"спокойный, естественный","size_mb":65,"model":"https://huggingface.co/rhasspy/piper-voices/resolve/main/ru/ru_RU/irina/medium/ru_RU-irina-medium.onnx","config":"https://huggingface.co/rhasspy/piper-voices/resolve/main/ru/ru_RU/irina/medium/ru_RU-irina-medium.onnx.json"},
   {"id":"ru_RU-dmitri-medium","name":"Дмитрий","gender":"male","lang":"ru-RU","engine":"piper","model":"https://huggingface.co/rhasspy/piper-voices/resolve/main/ru/ru_RU/dmitri/medium/ru_RU-dmitri-medium.onnx","config":"https://huggingface.co/rhasspy/piper-voices/resolve/main/ru/ru_RU/dmitri/medium/ru_RU-dmitri-medium.onnx.json"},
   {"id":"ru_RU-denis-medium","name":"Денис","gender":"male","lang":"ru-RU","engine":"piper","size_mb":64,"model":"https://huggingface.co/rhasspy/piper-voices/resolve/main/ru/ru_RU/denis/medium/ru_RU-denis-medium.onnx","config":"https://huggingface.co/rhasspy/piper-voices/resolve/main/ru/ru_RU/denis/medium/ru_RU-denis-medium.onnx.json"},
@@ -130,6 +134,12 @@ async def install(kind,item_id,job_state=None):
  if kind=="voices":
   if item.get("installable") is False:raise RuntimeError("Этот голос пока доступен только как описание/пресет и не имеет отдельного пакета модели")
   engine=item.get("engine","piper")
+  if item.get("preset") and engine=="kokoro":
+   if engine not in st.get("engines",[]):raise RuntimeError("Сначала установите движок kokoro")
+   st.setdefault("voices",[])
+   if item_id not in st["voices"]:st["voices"].append(item_id)
+   st["active_voice"]="";st["active_voice_id"]=item_id;st["active_voice_engine"]="kokoro"
+   _save(st);return {"ok":True,"installed":st,"item":item}
   if engine!="piper" and engine not in st.get("engines",[]):raise RuntimeError("Сначала установите движок "+engine)
   if "model" not in item or "config" not in item:raise RuntimeError("Для этого голоса требуется пакет модели, установка будет добавлена отдельно")
   d=DATA/"voices"/item_id;d.mkdir(parents=True,exist_ok=True)
@@ -169,8 +179,10 @@ async def use(kind,item_id):
  st=installed()
  if item_id not in st.get(kind,[]):raise ValueError("Item is not installed")
  if kind=="voices":
-  item=next(x for x in CATALOG["voices"] if x["id"]==item_id);d=DATA/"voices"/item_id
-  st["active_voice"]=str(d/Path(item["model"]).name);st["active_voice_id"]=item_id;st["active_voice_engine"]=item.get("engine","piper")
+  item=next(x for x in CATALOG["voices"] if x["id"]==item_id);engine=item.get("engine","piper")
+  if item.get("preset") and engine=="kokoro":st["active_voice"]="";st["active_voice_id"]=item_id;st["active_voice_engine"]="kokoro"
+  else:
+   d=DATA/"voices"/item_id;st["active_voice"]=str(d/Path(item["model"]).name);st["active_voice_id"]=item_id;st["active_voice_engine"]=engine
  elif kind=="ai":st["active_ai"]=item_id
  elif kind=="plugins":st["active_plugin"]=item_id
  _save(st);return {"ok":True,"installed":st}
