@@ -58,6 +58,7 @@ from .proxy import status as proxy_status
 from .network_brain import network_brain
 from .pubg_training import snapshot as pubg_status, confirm_training, training_session, stop as stop_pubg
 from .pubg_vision import observe as pubg_observe
+from .pubg_aim import all_profiles as pubg_aim_profiles
 import asyncio
 
 app = FastAPI(title="Kira VTuber Core", version="0.2.0")
@@ -380,6 +381,9 @@ async def learning_study(req:StudyRequest):
 
 @app.get("/learning/{game}")
 async def learning_state(game:str,q:str=""): return {"items":learned_recall(game,q,50)}
+
+@app.get("/pubg/training/skills")
+async def pubg_training_skills(): return {"weapons":pubg_aim_profiles()}
 
 @app.get("/pubg/vision")
 async def pubg_vision_state(): return await pubg_observe()
