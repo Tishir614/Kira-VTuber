@@ -597,8 +597,9 @@ async def catalog_remove_item(kind:str,item_id:str):
     except Exception as exc:raise HTTPException(503,str(exc)) from exc
 
 @app.get("/catalog/voices/{item_id}/preview")
-async def catalog_voice_preview(item_id:str):
-    try:return FileResponse(await voice_preview(item_id),media_type="audio/wav",filename="kira-voice-preview.wav")
+async def catalog_voice_preview(item_id:str,text:str="Привет! Я Кира. Так будет звучать мой голос."):
+    text=(text or "Привет! Я Кира.").strip()[:240]
+    try:return FileResponse(await voice_preview(item_id,text),media_type="audio/wav",filename="kira-voice-preview.wav")
     except (ValueError,RuntimeError) as exc:raise HTTPException(400,str(exc)) from exc
     except Exception as exc:raise HTTPException(503,str(exc)) from exc
 
