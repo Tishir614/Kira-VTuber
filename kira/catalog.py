@@ -6,6 +6,35 @@ from urllib.request import Request, urlopen
 
 DATA=Path(os.environ.get("KIRA_DATA_DIR","runtime"))
 JOBS={}
+ENGINE_PACKAGES={
+ "piper":{"name":"Piper","package":"piper-tts","description":"Лёгкий локальный TTS для ONNX-голосов."},
+ "kokoro":{"name":"Kokoro","package":"kokoro","description":"Локальный нейросетевой TTS для персонажных голосов."},
+ "gpt-sovits":{"name":"GPT-SoVITS","package":"git+https://github.com/RVC-Boss/GPT-SoVITS.git","description":"Few-shot TTS для собственных персонажных голосов."}
+}
+def engine_state():
+ st=installed(); return [{"id":k,**v,"installed":k in st.get("engines",[])} for k,v in ENGINE_PACKAGES.items()]
+async def install_engine(engine_id):
+ item=ENGINE_PACKAGES.get(engine_id)
+ if not item: raise ValueError("Unknown engine")
+ root=DATA/"engines"/engine_id; venv=root/"venv"
+ root.mkdir(parents=True,exist_ok=True)
+ import sys
+ p=await asyncio.create_subprocess_exec(sys.executable,"-m","venv",str(venv)); rc=await p.wait()
+ if rc: raise RuntimeError("Cannot create engine environment")
+ pip=venv/("Scripts/pip.exe" if os.name=="nt" else "bin/pip")
+ p=await asyncio.create_subprocess_exec(str(pip),"install","--upgrade","pip"); rc=await p.wait()
+ if rc: raise RuntimeError("Cannot prepare engine environment")
+ p=await asyncio.create_subprocess_exec(str(pip),"install",item["package"]); rc=await p.wait()
+ if rc: raise RuntimeError("Engine installation failed")
+ st=installed();st.setdefault("engines",[])
+ if engine_id not in st["engines"]:st["engines"].append(engine_id)
+ _save(st);return {"ok":True,"engines":engine_state()}
+async def remove_engine(engine_id):
+ if engine_id not in ENGINE_PACKAGES: raise ValueError("Unknown engine")
+ shutil.rmtree(DATA/"engines"/engine_id,ignore_errors=True)
+ st=installed()
+ if engine_id in st.get("engines",[]):st["engines"].remove(engine_id)
+ _save(st);return {"ok":True,"engines":engine_state()}
 
 def jobs(): return list(JOBS.values())
 def cancel_job(job_id):
@@ -76,7 +105,7 @@ CATALOG={
 def installed():
  p=DATA/"catalog-installed.json"
  try:return json.loads(p.read_text("utf-8"))
- except Exception:return {"voices":[],"ai":[],"plugins":[],"active_voice":"","active_ai":""}
+ except Exception:return {"voices":[],"ai":[],"plugins":[],"engines":[],"active_voice":"","active_ai":""}
 def _save(x):
  DATA.mkdir(parents=True,exist_ok=True);(DATA/"catalog-installed.json").write_text(json.dumps(x,ensure_ascii=False,indent=2),"utf-8")
 def _download(url: str, target: Path, progress=None):
@@ -98,6 +127,9 @@ async def install(kind,item_id,job_state=None):
  if not item:raise ValueError("Unknown catalog item")
  st=installed()
  if kind=="voices":
+  engine=item.get("engine","piper")
+  if engine!="piper" and engine not in st.get("engines",[]):raise RuntimeError("Сначала установите движок "+engine)
+  if "model" not in item or "config" not in item:raise RuntimeError("Для этого голоса требуется пакет модели, установка будет добавлена отдельно")
   d=DATA/"voices"/item_id;d.mkdir(parents=True,exist_ok=True)
   files=[("model",.94),("config",.06)]
   for key,weight in files:
