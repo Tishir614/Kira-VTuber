@@ -1,3 +1,12 @@
 <resources>
-<style name="Theme.KiraStudio" parent="android:style/Theme.Material.NoActionBar"><item name="android:fontFamily">sans</item><item name="android:windowLightStatusBar">false</item><item name="android:statusBarColor">#0A0710</item><item name="android:navigationBarColor">#0A0710</item><item name="android:colorAccent">#A855F7</item><item name="android:windowBackground">@drawable/splash_bg</item></style>
+<style name="Theme.KiraStudio" parent="android:style/Theme.Material.NoActionBar">
+ <item name="android:fontFamily">sans</item><item name="android:windowLightStatusBar">false</item>
+ <item name="android:statusBarColor">#0A0710</item><item name="android:navigationBarColor">#0A0710</item>
+ <item name="android:colorAccent">#A855F7</item><item name="android:windowBackground">#0A0710</item>
+</style>
+<style name="Theme.KiraStudio.Starting" parent="Theme.SplashScreen">
+ <item name="windowSplashScreenBackground">#0A0710</item>
+ <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+ <item name="postSplashScreenTheme">@style/Theme.KiraStudio</item>
+</style>
 </resources>
