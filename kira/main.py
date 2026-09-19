@@ -387,6 +387,9 @@ async def learning_state(game:str,q:str=""): return {"items":learned_recall(game
 @app.get("/pubg/training/map")
 async def pubg_map(): return pubg_training_map()
 
+@app.get("/pubg/training/map")
+async def pubg_map(): return pubg_training_map()
+
 @app.get("/pubg/training/weapons")
 async def pubg_training_weapons(): return pubg_weapon_knowledge()
 
