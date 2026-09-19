@@ -23,8 +23,10 @@ class MainActivity:androidx.activity.ComponentActivity(){
  private val pick=registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.OpenDocument()){u->chooser?.onReceiveValue(if(u==null)null else arrayOf(u));chooser=null}
  override fun onCreate(b:Bundle?){
   installSplashScreen()
-  super.onCreate(b);setContentView(R.layout.activity_main)
-  web=findViewById(R.id.web);web.setBackgroundColor(Color.rgb(10,7,16));if(showPreviousCrashIfAny())return
+  super.onCreate(b)
+  if(showPreviousCrashIfAny())return
+  setContentView(R.layout.activity_main)
+  web=findViewById(R.id.web);web.setBackgroundColor(Color.rgb(10,7,16))
   if(Build.VERSION.SDK_INT>=33&&checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED)requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),9)
   with(web.settings){javaScriptEnabled=true;domStorageEnabled=true;databaseEnabled=true;cacheMode=WebSettings.LOAD_DEFAULT;mediaPlaybackRequiresUserGesture=false;allowFileAccess=false;allowContentAccess=false;setSupportZoom(false);mixedContentMode=WebSettings.MIXED_CONTENT_NEVER_ALLOW;userAgentString=userAgentString+" KiraStudioAndroid/"+BuildConfig.VERSION_NAME}
   CookieManager.getInstance().setAcceptCookie(true);CookieManager.getInstance().setAcceptThirdPartyCookies(web,true)
@@ -46,7 +48,6 @@ class MainActivity:androidx.activity.ComponentActivity(){
   val pending=prefs().getBoolean("crash_pending",false)
   if(!f.exists()&&!pending)return false
   val msg=runCatching{if(f.exists())f.readText().take(12000) else "Crash marker exists, but report file is missing."}.getOrDefault("Не удалось прочитать crash log")
-  web.visibility=android.view.View.GONE
   AlertDialog.Builder(this).setTitle("Kira Studio: отчёт о сбое").setMessage(msg).setCancelable(false)
    .setPositiveButton("Копировать"){_,_->val cm=getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager;cm.setPrimaryClip(android.content.ClipData.newPlainText("Kira crash",msg));toast("Crash report скопирован")}
    .setNeutralButton("Попробовать снова"){_,_->prefs().edit().putBoolean("crash_pending",false).apply();f.delete();recreate()}
