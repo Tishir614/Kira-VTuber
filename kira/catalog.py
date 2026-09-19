@@ -9,13 +9,14 @@ JOBS={}
 ENGINE_PACKAGES={
  "piper":{"name":"Piper","package":"piper-tts","description":"Лёгкий локальный TTS для ONNX-голосов."},
  "kokoro":{"name":"Kokoro","package":"kokoro","description":"Локальный нейросетевой TTS для персонажных голосов."},
- "gpt-sovits":{"name":"GPT-SoVITS","package":"git+https://github.com/RVC-Boss/GPT-SoVITS.git","description":"Few-shot TTS для собственных персонажных голосов."}
+ "gpt-sovits":{"name":"GPT-SoVITS","package":None,"manual":True,"description":"Few-shot TTS. Требует отдельную установку Python 3.10 и системных зависимостей."}
 }
 def engine_state():
  st=installed(); return [{"id":k,**v,"installed":k in st.get("engines",[])} for k,v in ENGINE_PACKAGES.items()]
 async def install_engine(engine_id):
  item=ENGINE_PACKAGES.get(engine_id)
  if not item: raise ValueError("Unknown engine")
+ if item.get("manual"): raise RuntimeError("Этот движок требует отдельный установщик и пока не устанавливается одной кнопкой.")
  root=DATA/"engines"/engine_id; venv=root/"venv"
  root.mkdir(parents=True,exist_ok=True)
  import sys
