@@ -10,6 +10,7 @@ from .cloud_client import cloud_post
 from .experience_engine import record as record_experience
 from .learning_memory import recall as recall_learned
 from .research_brain import research
+from .pubg_aim import adjust as aim_adjust, compensate as recoil_compensate, learn as learn_aim
 
 @dataclass
 class PUBGTrainingState:
@@ -53,13 +54,21 @@ async def training_session(max_steps:int=40):
         before=await analyze_game("PUBG Mobile TRAINING GROUND only. Practice movement, loot and shooting at training targets.")
         ui=before.get("ui_state","unknown")
         if pv.get("reload_needed") or pv.get("ammo_current")==0:action="reload"
+        elif pv.get("training_targets") and not pv.get("crosshair_target"):
+            off=pv.get("target_offset") or {};await aim_adjust(float(off.get("x",0) or 0),float(off.get("y",0) or 0),pv.get("weapon_primary",""));action="aim"
         elif pv.get("crosshair_target") and pv.get("training_targets"):action="shoot"
         elif pv.get("interact_available") or pv.get("nearby_loot"):action="interact"
         elif pv.get("movement",{}).get("blocked"):action=["left","right"][state.steps%2]
         elif ui in {"loading","menu","dialog","unknown"}:action="forward"
         else:action=["forward","left","right"][state.steps%3]
-        await _act(action);await asyncio.sleep(.35)
+        if action=="shoot":await recoil_compensate(pv.get("weapon_primary",""))
+        if action!="aim":await _act(action)
+        await asyncio.sleep(.35)
         after=await analyze_game("Evaluate PUBG training action result.",str(before)[:800])
+        if action=="shoot":
+            try:
+                pv2=await pubg_observe();fb=pv2.get("shot_feedback") or {};learn_aim(pv.get("weapon_primary",""),bool(fb.get("hit")),float(fb.get("vertical_drift",0) or 0))
+            except Exception:pass
         record_experience("pubg_mobile_training",{"action":action},before,after,learned)
         state.steps+=1;state.last_action=action
       return asdict(state)
