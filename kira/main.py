@@ -612,6 +612,13 @@ async def pwa_asset(asset:str):
     p=WEB/"pwa"/asset
     if not p.is_file(): raise HTTPException(404,"PWA asset not found")
     return FileResponse(p)
+
+@app.get("/store.js")
+async def store_js(): return FileResponse(WEB / "store.js",media_type="application/javascript")
+
+@app.get("/store.css")
+async def store_css(): return FileResponse(WEB / "store.css",media_type="text/css")
+
 @app.get("/studio")
 async def studio(): return FileResponse(WEB / "studio.html")
 
