@@ -8,6 +8,7 @@ class KiraBridge(private val activity:MainActivity){
  @JavascriptInterface fun platform()="android"
  @JavascriptInterface fun changeServer(){activity.runOnUiThread{activity.openServerDialog()}}
  @JavascriptInterface fun reload(){activity.runOnUiThread{activity.reloadStudio()}}
+ @JavascriptInterface fun broadcastMode()="native-pending"
  @JavascriptInterface fun openStreamlabs(){
   activity.runOnUiThread{
    val pm=activity.packageManager
