@@ -1,10 +1,21 @@
 """Installable catalog for Kira Studio. Installs one selected component at a time."""
 from __future__ import annotations
-import asyncio, json, os, shutil, tempfile
+import asyncio, json, os, shutil, tempfile, time, uuid
 from pathlib import Path
 from urllib.request import urlopen
 
 DATA=Path(os.environ.get("KIRA_DATA_DIR","runtime"))
+JOBS={}
+
+def jobs(): return list(JOBS.values())
+def job(job_id): return JOBS.get(job_id)
+async def install_job(kind,item_id):
+ jid=uuid.uuid4().hex[:12]; j={"id":jid,"kind":kind,"item_id":item_id,"status":"queued","progress":0,"created":time.time(),"error":""};JOBS[jid]=j
+ async def run():
+  try:
+   j.update(status="installing",progress=10);await install(kind,item_id);j.update(status="done",progress=100)
+  except Exception as exc:j.update(status="error",error=str(exc),progress=0)
+ asyncio.create_task(run());return j
 CATALOG={
  "voices":[
   {"id":"ru_RU-irina-medium","name":"Ирина","gender":"female","lang":"ru-RU","engine":"piper","style":"спокойный, естественный","size_mb":65,"model":"https://huggingface.co/rhasspy/piper-voices/resolve/main/ru/ru_RU/irina/medium/ru_RU-irina-medium.onnx","config":"https://huggingface.co/rhasspy/piper-voices/resolve/main/ru/ru_RU/irina/medium/ru_RU-irina-medium.onnx.json"},
