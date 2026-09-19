@@ -6,6 +6,7 @@ from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel
 import httpx, uvicorn
 from .config import settings
+from .full_calibration import full_calibration
 from .ai_calibration import calibrate_ai
 from .voice_calibration import calibrate as calibrate_voice
 from .voice import voice as calibration_voice
@@ -786,6 +787,11 @@ async def live2d_install(file:UploadFile=File(...)):
     except Exception as exc: raise HTTPException(400,str(exc)) from exc
     finally:
         tmp.unlink(missing_ok=True)
+
+@app.post("/character/full-calibration")
+async def character_full_calibration():
+    try:return await full_calibration()
+    except Exception as exc:raise HTTPException(503,str(exc)) from exc
 
 @app.post("/character/calibrate-ai")
 async def character_calibrate_ai():
