@@ -114,3 +114,11 @@ def test_proxy_hides_credentials_and_is_service_scoped():
     assert "proxy_services" in proxy
     assert 'u.hostname' in proxy
     assert 'scheme in {"http","https","socks5","socks5h"}' in proxy
+
+
+def test_network_brain_has_direct_proxy_failover():
+    net=Path("kira/network_brain.py").read_text()
+    autonomy=Path("kira/autonomy.py").read_text()
+    assert '"telegram"' in net and '"twitch"' in net and '"youtube"' in net
+    assert 'route.mode="direct"' in net and 'route.mode="proxy"' in net
+    assert "network_brain.start()" in autonomy and "network_brain.stop()" in autonomy
