@@ -7,7 +7,7 @@ from .live2d_model import profile as live2d_profile
 DATA=Path(os.environ.get("KIRA_DATA_DIR","runtime"))
 FILE=DATA/"character-runtime.json"
 DEFAULT={
- "name":"Kira","voice":{"speed":1.0,"energy":0.72,"mouth_gain":1.0},
+ "name":"Kira","voice":{"speed":1.0,"energy":0.72,"mouth_gain":1.0,"mouth_attack":0.58,"mouth_release":0.28,"mouth_gate":0.018,"mouth_peak":9000.0},
  "ai":{"temperature":0.75,"reply_style":"живой, естественный, персонажный"},
  "motion":{"speech_energy":0.65,"ear_reactivity":0.55,"tail_reactivity":0.45},
  "plugins":{"allow_avatar_events":True}
@@ -35,7 +35,7 @@ def recommend():
  furry=caps.get("ear_l") or caps.get("ear_r") or caps.get("tail_x")
  expressive=sum(bool(caps.get(x)) for x in ("brow_l","brow_r","mouth_form","eye_l","eye_r"))
  return {
-  "voice":{"speed":0.96 if expressive>=3 else 1.0,"energy":0.82 if furry else 0.68,"mouth_gain":1.08 if caps.get("mouth_form") else 1.0},
+  "voice":{"speed":0.96 if expressive>=3 else 1.0,"energy":0.82 if furry else 0.68,"mouth_gain":1.08 if caps.get("mouth_form") else 1.0,"mouth_attack":0.64 if expressive>=3 else 0.54,"mouth_release":0.32 if expressive>=3 else 0.25,"mouth_gate":0.016,"mouth_peak":9000.0},
   "ai":{"temperature":0.82 if expressive>=3 else 0.72,"reply_style":"эмоциональный VTuber, живой и естественный" if expressive>=3 else "живой, естественный, персонажный"},
   "motion":{"speech_energy":0.78 if expressive>=3 else 0.62,"ear_reactivity":0.72 if furry else 0.0,"tail_reactivity":0.62 if caps.get("tail_x") else 0.0},
   "plugins":{"allow_avatar_events":True}
