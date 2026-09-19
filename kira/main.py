@@ -1,4 +1,5 @@
 import os
+from .catalog import CATALOG, installed as catalog_installed, install as catalog_install
 from pathlib import Path
 from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.responses import FileResponse, StreamingResponse
@@ -544,6 +545,19 @@ async def obs_state(): return obs_config.load()
 
 @app.get("/overlay/state")
 async def overlay_state(): return stream_snapshot()
+
+
+@app.get("/catalog")
+async def catalog():
+    state=catalog_installed()
+    return {"catalog":CATALOG,"installed":state}
+
+@app.post("/catalog/{kind}/{item_id}/install")
+async def catalog_install_item(kind:str,item_id:str):
+    if kind not in ("voices","ai","plugins"): raise HTTPException(400,"invalid catalog kind")
+    try:return await catalog_install(kind,item_id)
+    except (ValueError,RuntimeError) as exc:raise HTTPException(400,str(exc)) from exc
+    except Exception as exc:raise HTTPException(503,str(exc)) from exc
 
 @app.get("/models")
 async def models():
