@@ -45,6 +45,7 @@ class MainActivity:androidx.activity.ComponentActivity(){
  private fun scheduleHealth(){val r=PeriodicWorkRequestBuilder<HealthWorker>(15,TimeUnit.MINUTES).build();WorkManager.getInstance(this).enqueueUniquePeriodicWork("kira-health",ExistingPeriodicWorkPolicy.UPDATE,r)}
  override fun onDestroy(){chooser?.onReceiveValue(null);chooser=null;if(::web.isInitialized){web.stopLoading();web.removeJavascriptInterface("KiraAndroid");web.webChromeClient=null;web.webViewClient=WebViewClient();web.destroy()};super.onDestroy()}
  fun reloadStudio(){loadStudio(prefs().getString("url","")?:"")}
+ fun openStudioPage(page:String){val js="if(window.studioPage){const b=document.querySelector(\'[data-page=\\\""+page+"\\\"]\');studioPage(\'"+page+"\',b)}";web.evaluateJavascript(js,null)}
  fun requestBroadcast(){if(checkSelfPermission(android.Manifest.permission.RECORD_AUDIO)!=PackageManager.PERMISSION_GRANTED){micPermission.launch(android.Manifest.permission.RECORD_AUDIO);return};launchCapture()}
  private fun launchCapture(){val m=getSystemService(MediaProjectionManager::class.java);capture.launch(m.createScreenCaptureIntent())}
  fun stopBroadcast(){startService(Intent(this,BroadcastService::class.java).setAction(BroadcastService.STOP))}
