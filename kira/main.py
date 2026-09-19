@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.responses import FileResponse, StreamingResponse
@@ -65,6 +66,10 @@ from .pubg_goals import state as pubg_goal_state
 import asyncio
 
 app = FastAPI(title="Kira VTuber Core", version="0.2.0")
+
+def _oauth_redirect(provider:str)->str:
+    port=os.environ.get("KIRA_DESKTOP_PORT") or str(settings.port)
+    return f"http://127.0.0.1:{port}/auth/{provider}/callback"
 WEB = Path(__file__).resolve().parent.parent / "web"
 
 @app.on_event("startup")
@@ -210,7 +215,7 @@ async def home(): return FileResponse(WEB / "index.html")
 
 @app.post("/auth/twitch/url")
 async def twitch_auth_url(req: TwitchOAuthConfig):
-    redirect="http://127.0.0.1:8765/auth/twitch/callback"
+    redirect=_oauth_redirect("twitch")
     # Client secret is intentionally not returned or persisted here.
     settings_store.save({"twitch_client_id":req.client_id,"twitch_client_secret":req.client_secret})
     return {"url":twitch_oauth.authorize_url(req.client_id,redirect)}
@@ -267,7 +272,7 @@ async def twitch_autostart():
 
 @app.post("/auth/youtube/url")
 async def youtube_auth_url(req: YouTubeOAuthConfig):
-    redirect="http://127.0.0.1:8765/auth/youtube/callback"
+    redirect=_oauth_redirect("youtube")
     settings_store.save({"youtube_client_id":req.client_id,"youtube_client_secret":req.client_secret})
     return {"url":youtube_oauth.authorize_url(req.client_id,redirect)}
 
