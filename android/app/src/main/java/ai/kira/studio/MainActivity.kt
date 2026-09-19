@@ -18,13 +18,14 @@ import java.util.concurrent.TimeUnit
 class MainActivity:androidx.activity.ComponentActivity(){
  private lateinit var web:WebView
  private var chooser:ValueCallback<Array<Uri>>?=null
+ private val micPermission=registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.RequestPermission()){ok->if(ok)launchCapture() else toast("Для эфира нужен доступ к микрофону")}
  private val capture=registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()){r->if(r.resultCode==Activity.RESULT_OK&&r.data!=null){val i=Intent(this,BroadcastService::class.java).setAction(BroadcastService.START).putExtra(BroadcastService.EXTRA_RESULT_CODE,r.resultCode).putExtra(BroadcastService.EXTRA_DATA,r.data);androidx.core.content.ContextCompat.startForegroundService(this,i)}else toast("Захват экрана отменён")}
  private val pick=registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.OpenDocument()){u->chooser?.onReceiveValue(if(u==null)null else arrayOf(u));chooser=null}
  override fun onCreate(b:Bundle?){
   installSplashScreen();super.onCreate(b);setContentView(R.layout.activity_main)
   web=findViewById(R.id.web);web.setBackgroundColor(Color.rgb(10,7,16));showPreviousCrashIfAny()
   if(Build.VERSION.SDK_INT>=33&&checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED)requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),9)
-  with(web.settings){javaScriptEnabled=true;domStorageEnabled=true;databaseEnabled=true;cacheMode=WebSettings.LOAD_DEFAULT;mediaPlaybackRequiresUserGesture=false;allowFileAccess=false;allowContentAccess=false;setSupportZoom(false);mixedContentMode=WebSettings.MIXED_CONTENT_NEVER_ALLOW;userAgentString=userAgentString+" KiraStudioAndroid/1.4.0"}
+  with(web.settings){javaScriptEnabled=true;domStorageEnabled=true;databaseEnabled=true;cacheMode=WebSettings.LOAD_DEFAULT;mediaPlaybackRequiresUserGesture=false;allowFileAccess=false;allowContentAccess=false;setSupportZoom(false);mixedContentMode=WebSettings.MIXED_CONTENT_NEVER_ALLOW;userAgentString=userAgentString+" KiraStudioAndroid/"+BuildConfig.VERSION_NAME}
   CookieManager.getInstance().setAcceptCookie(true);CookieManager.getInstance().setAcceptThirdPartyCookies(web,true)
   web.addJavascriptInterface(KiraBridge(this),"KiraAndroid")
   web.webChromeClient=object:WebChromeClient(){override fun onShowFileChooser(v:WebView?,cb:ValueCallback<Array<Uri>>,p:FileChooserParams?):Boolean{chooser?.onReceiveValue(null);chooser=cb;pick.launch(arrayOf("application/zip","application/octet-stream","application/x-zip-compressed"));return true}}
@@ -44,7 +45,8 @@ class MainActivity:androidx.activity.ComponentActivity(){
  private fun scheduleHealth(){val r=PeriodicWorkRequestBuilder<HealthWorker>(15,TimeUnit.MINUTES).build();WorkManager.getInstance(this).enqueueUniquePeriodicWork("kira-health",ExistingPeriodicWorkPolicy.UPDATE,r)}
  override fun onDestroy(){chooser?.onReceiveValue(null);chooser=null;if(::web.isInitialized){web.stopLoading();web.removeJavascriptInterface("KiraAndroid");web.webChromeClient=null;web.webViewClient=WebViewClient();web.destroy()};super.onDestroy()}
  fun reloadStudio(){loadStudio(prefs().getString("url","")?:"")}
- fun requestBroadcast(){val m=getSystemService(MediaProjectionManager::class.java);capture.launch(m.createScreenCaptureIntent())}
+ fun requestBroadcast(){if(checkSelfPermission(android.Manifest.permission.RECORD_AUDIO)!=PackageManager.PERMISSION_GRANTED){micPermission.launch(android.Manifest.permission.RECORD_AUDIO);return};launchCapture()}
+ private fun launchCapture(){val m=getSystemService(MediaProjectionManager::class.java);capture.launch(m.createScreenCaptureIntent())}
  fun stopBroadcast(){startService(Intent(this,BroadcastService::class.java).setAction(BroadcastService.STOP))}
  fun openServerDialog(){askUrl()}
  private fun askUrl(){
