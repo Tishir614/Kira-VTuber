@@ -1,4 +1,7 @@
 import os
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 os.environ.setdefault("KIRA_HOST","127.0.0.1")
 from fastapi.testclient import TestClient
 from kira.main import app
