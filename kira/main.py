@@ -6,6 +6,8 @@ from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel
 import httpx, uvicorn
 from .config import settings
+from .voice_calibration import calibrate as calibrate_voice
+from .voice import voice as calibration_voice
 from .character_runtime import snapshot as character_snapshot, auto_tune as character_auto_tune
 from .pipeline import respond
 from .live2d import live2d
@@ -783,6 +785,19 @@ async def live2d_install(file:UploadFile=File(...)):
     except Exception as exc: raise HTTPException(400,str(exc)) from exc
     finally:
         tmp.unlink(missing_ok=True)
+
+@app.post("/character/calibrate-voice")
+async def character_calibrate_voice():
+    model=settings.piper_model
+    if not model:raise HTTPException(400,"Voice model is not configured")
+    try:
+        wav=await calibration_voice.synthesize("Привет! Я Кира. Сейчас я настраиваю движения рта под свой голос.",model)
+        return calibrate_voice(wav)
+    except Exception as exc:raise HTTPException(503,str(exc)) from exc
+    finally:
+        try:
+            if 'wav' in locals():wav.unlink(missing_ok=True)
+        except Exception:pass
 
 @app.get("/character/profile")
 async def character_profile_status(): return character_snapshot()
