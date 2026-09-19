@@ -139,3 +139,12 @@ def test_pubg_vision_requires_training_mode_for_control():
         assert field in vision
     assert 'pv.get("mode")!="training"' in training
     assert "crosshair_target" in training
+
+
+def test_pubg_aim_learning_is_training_scoped():
+    aim=Path("kira/pubg_aim.py").read_text()
+    training=Path("kira/pubg_training.py").read_text()
+    assert "pubg_training_skills.json" in aim
+    assert "pull_down" in aim and "hits" in aim and "shots" in aim
+    assert "aim_adjust" in training and "recoil_compensate" in training
+    assert "training_confirmed" in training
